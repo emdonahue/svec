@@ -1,0 +1,23 @@
+#!/bin/zsh
+
+
+case $1 in
+
+    scale) #Scale all elements by a constant
+	#<constant> <vector>
+	echo "scaling"
+	;;
+    help) #Print the list of subcommands
+	#[subcommand]
+	if [[ -z "$2" ]]; then
+	    echo 'usage: svec <subcommand> [arguments]'
+	    echo 'List of subcommands:'
+	    grep -E ')\s#' $0 | sed -E 's/(\w+)\)\s#(.+)$/\1 - \2/'
+	else
+	    grep -A 1 "$2)" "$0" | sed -E -e 's/\s*(\w+)\)\s#(.+)$/\1 - \2/' -e "s/#(.+)/usage: $2 \1/"
+	fi
+	;;
+    *)
+	"$0" help
+	;;
+esac

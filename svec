@@ -9,8 +9,10 @@ case $1 in
 	;;
     help) #Print the list of subcommands or help information for a specific subcommand
 	#[subcommand]
-	[[ -z "$2" ]] && echo 'usage: svec <subcommand> [arguments]'
-	grep -A "${+2}" "$2)\s#" "$0" | sed -nE -e 's/\s*(\w+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $2 \1/p"
+	{[[ -z "$2" ]] && echo 'usage: svec <subcommand> [arguments]';
+	 grep -A "${+2}" "$2)\s#" "$0" | sed -nE -e 's/\s*(\w+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $2 \1/p"} | \
+	    sed '2,$ s/^/\t/'
+	
 	;;
     *)
 	"$0" help

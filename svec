@@ -9,11 +9,11 @@ case "$1" in
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
-	echo "scaling"
+	awk -F'\t' -vOFS='\t' '{$2*=('"$2"'); print}' "$3"
 	;;
     sum) #Element-wise sum
 	#<vector1> <vector2>
-	"$0" join "$2" "$3" | awk -F$'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
+	"$0" join "$2" "$3" | awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
 	;;
     help|--help|-h) #Print the list of subcommands or help information for a specific subcommand
 	#[subcommand]

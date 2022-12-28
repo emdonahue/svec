@@ -1,0 +1,18 @@
+#!/bin/zsh
+
+assert() {
+       if [[ "$2" != "$3" ]]; then
+       	   echo "Failure: $1\n\tExpected: $3\n\tReceived: $2"
+	   ERR=1
+       fi
+}
+
+a='a\t1\nb\t2\nc\t3'
+
+assert "scale"  "$(./svec scale 2 <(echo $a))" "$(echo 'a\t2\nb\t4\nc\t6')"
+assert "sum"  "$(./svec sum <(echo $a) <(echo $a))" "$(echo 'a\t2\nb\t4\nc\t6')"
+
+[[ -z "$ERR" ]] && echo "All Tests Pass"
+exit "$ERR"
+
+

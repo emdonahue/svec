@@ -4,15 +4,16 @@
 case "$1" in
 
     join) #Joins values with the same coordinates together for further processing (summation, multiplication, etc.)
-	join -a1 -a2 -e0 -t$'\037' "$2" "$3"
+	#<vector1> <vector2>
+	join -a1 -a2 -e0 -t$'\t' "$2" "$3"
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
 	echo "scaling"
 	;;
     sum) #Element-wise sum
-	"$0" join "$2" "$3" | awk -F$'\037' -vOFS=$'\037' '{while (2<NF) {$2+=$NF; NF--}; print}'
-	#{for (i=NF-1;2<i;i--) $2+=$i; print $1,$2}
+	#<vector1> <vector2>
+	"$0" join "$2" "$3" | awk -F$'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
 	;;
     help|--help|-h) #Print the list of subcommands or help information for a specific subcommand
 	#[subcommand]

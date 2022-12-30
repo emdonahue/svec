@@ -2,9 +2,13 @@
 
 case "$1" in
 
-    cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated list of tokens
+    cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
 	tr -s '[:space:]' '\n' < "$3" | awk -vW="$2" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
+	;;
+    counts) #Prints a matrix of token counts computed from a whitespace-separated file of tokens
+	#<file>
+	tr -s '[:space:]' '\n' < "$2" | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+)/\2\t\1/'
 	;;
     help|--help|-h) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	#<subcommand>

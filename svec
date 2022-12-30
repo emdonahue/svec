@@ -2,6 +2,8 @@
 
 case "$1" in
 
+#trap '{ rm -f -- "$LOCKFILE"; }' EXIT
+    
     cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
 	tr -s '[:space:]' '\n' < "$3" | awk -vW="$2" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
@@ -10,7 +12,7 @@ case "$1" in
 	#<file>
 	tr -s '[:space:]' '\n' < "$2" | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+)/\2\t\1/'
 	;;
-    help|--help|-h) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
+    --help|-h|help) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	#<subcommand>
 	{[[ -z "$2" ]] && echo 'usage: svec <subcommand> [arguments]';
 	 grep -A "${+2}" -- "$2.*)\s#" "$0" | sed -nE -e 's/\s*(.+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $2 \1/p"} | \
@@ -19,6 +21,11 @@ case "$1" in
     join) #Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
 	#<vector1> <vector2>
 	join -a1 -a2 -e0 -t$'\t' "$2" "$3"
+	;;
+    pmi) #Computes vector of log pointwise mutual information scores from a 2D matrix of bigram counts and a vector of unigram counts. Make sure both files can be rewound (no pipes).
+	#<bigrams> <unigrams>
+	join -12 <(join "$2" "$3" | sort -k2,2) "$3" | awk -vU=$(awk '{s+=$2} END {print s}' "$3") -vB=$(awk '{s+=$3} END {print s}' "$2") '{print $2,$1"\t"(log($3)-log(B)-((log($4)-log(U)) + (log($5)-log(U))))}'
+	#(log($3)-log(B)-((log($4)-log(U)) + (log($5)-log(U))))
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
@@ -32,3 +39,8 @@ case "$1" in
 	"$0" help
 	;;
 esac
+
+#function _svec() {
+#    compadd $(grep -Eo '\w+\) #' "$9")
+#}
+#compdef _svec svec

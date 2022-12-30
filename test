@@ -7,10 +7,16 @@ assert() {
        fi
 }
 
-a='a\t1\nb\t2\nc\t3'
+a='a\t1'
+bc='b\t2\nc\t3'
+abc="$a\n$bc"
+abc2='a\t2\nb\t4\nc\t6'
 
-assert "scale"  "$(./svec scale 2 <(echo $a))" "$(echo 'a\t2\nb\t4\nc\t6')"
-assert "sum"  "$(./svec sum <(echo $a) <(echo $a))" "$(echo 'a\t2\nb\t4\nc\t6')"
+
+assert "scale"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
+assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
+assert "sum"  "$(./svec sum <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
+assert "sum zero dimensions"  "$(./svec sum <(echo $a) <(echo $bc))" "$(echo "$abc")"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"

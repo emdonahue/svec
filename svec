@@ -1,9 +1,18 @@
 #!/bin/zsh
 
-
 case "$1" in
 
-    join) #Joins values with the same coordinates together for further processing (summation, multiplication, etc.)
+    cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated list of tokens
+	#<window> <file>
+	tr -s '[:space:]' '\n' < "$3" | awk -vW="$2" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
+	;;
+    help|--help|-h) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
+	#<subcommand>
+	{[[ -z "$2" ]] && echo 'usage: svec <subcommand> [arguments]';
+	 grep -A "${+2}" -- "$2.*)\s#" "$0" | sed -nE -e 's/\s*(.+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $2 \1/p"} | \
+	    sed 's/^\s*//; 2,$ s/^/\t/'	
+	;;
+    join) #Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
 	#<vector1> <vector2>
 	join -a1 -a2 -e0 -t$'\t' "$2" "$3"
 	;;
@@ -14,13 +23,7 @@ case "$1" in
     sum) #Element-wise sum
 	#<vector1> <vector2>
 	"$0" join "$2" "$3" | awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
-	;;
-    help|--help|-h) #Print the list of subcommands or help information for a specific subcommand
-	#[subcommand]
-	{[[ -z "$2" ]] && echo 'usage: svec <subcommand> [arguments]';
-	 grep -A "${+2}" -- "$2.*)\s#" "$0" | sed -nE -e 's/\s*(.+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $2 \1/p"} | \
-	    sed 's/^\s*//; 2,$ s/^/\t/'	
-	;;
+	;;    
     *)
 	"$0" help
 	;;

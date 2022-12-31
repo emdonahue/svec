@@ -1,6 +1,15 @@
 # svec
 Streaming computations over sparse vectors and matrices for use in text mining and NLP
 
+svec contains a collection of subcommands that operate on a common format for sparse vectors and matrices. Each vector or matrix is a text file each line of which contains space-separated alpha-numeric labels for the dimensions, followed by a tab, followed by the numeric value of that particular cell in the vector or matrix. Canonically, files are sorted by dimension. For instance, the 2x2 matrix with dimensions a and b would have the following representation:
+
+```
+a a	1
+a b	2
+b a	3
+b b	4
+```
+
 ## Documentation
 ```
 usage: svec <subcommand> [arguments]

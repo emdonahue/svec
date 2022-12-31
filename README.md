@@ -2,7 +2,7 @@
 Streaming computations over sparse vectors and matrices for use in text mining and NLP
 
 ## Documentation
-```zsh
+```
 usage: svec <subcommand> [arguments]
 	cooccurrences - Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	counts - Prints a vector of counts from a newline-separated stream of tokens

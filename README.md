@@ -20,6 +20,6 @@ usage: svec <subcommand> [arguments]
 	--help|-h|help - Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	join - Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
 	scale - Scale all elements by a constant
-	sum - Element-wise sum
+	sum - Element-wise sum of 2 or more vectors
 	word2vec - Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings.
 ```

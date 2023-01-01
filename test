@@ -13,11 +13,13 @@ abc="$a\n$bc"
 abc2='a\t2\nb\t4\nc\t6'
 
 
-assert "scale"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
+assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
-assert "sum"  "$(./svec sum <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
-assert "sum zero dimensions"  "$(./svec sum <(echo $a) <(echo $bc))" "$(echo "$abc")"
-assert "word2vec" "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
+assert "sum one"  "$(./svec sum <(echo $abc))" "$(echo "$abc")"
+assert "sum self"  "$(./svec sum <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
+assert "sum orthogonal dimensions"  "$(./svec sum <(echo $a) <(echo $bc))" "$(echo "$abc")"
+assert "sum n" "$(./svec sum <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(echo "$abc2")"
+assert "word2vec pmi=1" "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"

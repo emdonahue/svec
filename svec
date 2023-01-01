@@ -18,20 +18,21 @@ case "$CMD" in
 	    sed 's/^\s*//; 2,$ s/^/\t/'	
 	;;
     join) #Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
-	#<vector1> <vector2>
-	if [[ $# -le 2 ]]; then
+	#<vector> [<vector>]
+	if [[ $# -eq 1 ]]; then
+	    cat "$1"
+	elif [[ $# -le 2 ]]; then
 	    join -a1 -a2 -e0 -t$'\t' "$1" "$2"
 	else
-	    echo "die"
-	    #"$0" join <("$0" join "$1" "$2") "$@"
+	    "$0" join "$1" "$2" | {shift 2; "$0" join - "$@"}
 	fi
 	;;    
     scale) #Scale all elements by a constant
 	#<constant> <vector>
 	awk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print}' "$2"
 	;;
-    sum) #Element-wise sum
-	#<vector1> <vector2>
+    sum) #Element-wise sum of 2 or more vectors
+	#<vector> [<vector>]
 	"$0" join "$@" | awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings.

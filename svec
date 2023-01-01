@@ -18,7 +18,7 @@ case "$CMD" in
 	;;
     detriangularize) #Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
 	#<triangular matrix>
-	echo "nyi"
+	awk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1"
 	;;
     --help|-h|help) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	#<subcommand>
@@ -51,6 +51,10 @@ case "$CMD" in
     sum) #Element-wise sum of 2 or more vectors
 	#<vector> [<vector>]
 	"$0" join "$@" | awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
+	;;
+    vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
+	#<matrix>
+	echo 'nyi'
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>

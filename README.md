@@ -1,5 +1,5 @@
 # svec
-Streaming computations over sparse vectors and matrices for use in text mining and NLP
+Streaming computations over sparse vectors and matrices for use in text mining and NLP using standard unix tools
 
 svec contains a collection of subcommands that operate on a common format for sparse vectors and matrices. Each vector or matrix is a text file each line of which contains space-separated alpha-numeric labels for the dimensions, followed by a tab, followed by the numeric value of that particular cell in the vector or matrix. Canonically, files are sorted by dimension. For instance, the 2x2 matrix with dimensions a and b would have the following representation:
 
@@ -10,6 +10,8 @@ b a	3
 b b	4
 ```
 
+The subcommands all operate on this common format, and emphasize streaming and disk-based computations in order to handle large matrices that cannot fit in memory.
+
 ## Documentation
 ```
 usage: svec <subcommand> [arguments]
@@ -19,5 +21,5 @@ usage: svec <subcommand> [arguments]
 	join - Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
 	scale - Scale all elements by a constant
 	sum - Element-wise sum
-	word2vec - Computes matrix of log pointwise mutual information scores from a stream of whitespace-separated tokens that approximate word2vec embeddings. File must be seekable.
+	word2vec - Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings.
 ```

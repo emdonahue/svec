@@ -17,6 +17,7 @@ assert "scale"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
 assert "sum"  "$(./svec sum <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
 assert "sum zero dimensions"  "$(./svec sum <(echo $a) <(echo $bc))" "$(echo "$abc")"
+assert "word2vec" "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"

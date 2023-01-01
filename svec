@@ -1,41 +1,46 @@
 #!/bin/zsh
 
-case "$1" in
-
-#trap '{ rm -f -- "$LOCKFILE"; }' EXIT
-    
+CMD="$1"
+shift
+case "$CMD" in    
     cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
-	tr -s '[:space:]' '\n' < "$3" | awk -vW="$2" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
+	tr -s '[:space:]' '\n' < "$2" | awk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
 	;;
     counts) #Prints a vector of counts from a newline-separated stream of tokens
 	#<file>
-	sort "$2" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
+	sort "$1" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
     --help|-h|help) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	#<subcommand>
-	{[[ -z "$2" ]] && echo 'usage: svec <subcommand> [arguments]';
-	 grep -A "${+2}" -- "$2.*)\s#" "$0" | sed -nE -e 's/\s*(.+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $2 \1/p"} | \
+	{[[ -z "$1" ]] && echo 'usage: svec <subcommand> [arguments]';
+	 grep -A "${+1}" -- "$1.*)\s#" "$0" | sed -nE -e 's/\s*(.+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $1 \1/p"} | \
 	    sed 's/^\s*//; 2,$ s/^/\t/'	
 	;;
     join) #Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
 	#<vector1> <vector2>
-	join -a1 -a2 -e0 -t$'\t' "$2" "$3"
+	if [[ $# -le 2 ]]; then
+	    join -a1 -a2 -e0 -t$'\t' "$1" "$2"
+	else
+	    echo "die"
+	    #"$0" join <("$0" join "$1" "$2") "$@"
+	fi
 	;;    
     scale) #Scale all elements by a constant
 	#<constant> <vector>
-	awk -F'\t' -vOFS='\t' '{$2*=('"$2"'); print}' "$3"
+	awk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print}' "$2"
 	;;
     sum) #Element-wise sum
 	#<vector1> <vector2>
-	"$0" join "$2" "$3" | awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
+	"$0" join "$@" | awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
 	;;
-    word2vec) #Computes matrix of log pointwise mutual information scores from a stream of whitespace-separated tokens that approximate word2vec embeddings. File must be seekable.
-	#<file>
+    word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings.
+	#<co-occurrence window size> <token file>
 	local BIGRAMS=$(mktemp) UNIGRAMS=$(mktemp)
 	trap "rm -f $UNIGRAMS $BIGRAMS" EXIT
-	local NUM_UNIGRAMS=$(tr -s '[:space:]' '\n' < "$3" | awk -vW="$2" -vUs="$0 counts ->$UNIGRAMS" -vBs="$0 counts ->$BIGRAMS" '{print | Us; for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 | Bs } else { print $0,c[i] | Bs }}; c[i]=c[i+1] }; c[W]=$0 } END {print NR}')
-	join -12 <(join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2) "$UNIGRAMS" | awk -vU="$NUM_UNIGRAMS" -vB="$((NUM_UNIGRAMS * $2 - ($2*($2+1)/2)))" '{print $2,$1"\t"(log($3)-log(B)-((log($4)-log(U)) + (log($5)-log(U))))}'
+	local NUM_UNIGRAMS=$(tr -s '[:space:]' '\n' < "$2" | awk -vW="$1" -vUs="$0 counts ->$UNIGRAMS" -vBs="$0 counts ->$BIGRAMS" '{print | Us; for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 | Bs } else { print $0,c[i] | Bs }}; c[i]=c[i+1] }; c[W]=$0 } END {print NR}')
+	join -12 <(join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2) "$UNIGRAMS" | awk -M -vU="$NUM_UNIGRAMS" -vB="$((NUM_UNIGRAMS * $1 - ($1*($1+1)/2)))" '{printf("%s %s\t%.50g\n",$2,$1,$3/B/($4/U*($5/U)))}'
+	#log($3)-log(B)-((log($4)+log($5)-(2*log(U))))
 	;;
     *)
 	"$0" help

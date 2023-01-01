@@ -16,6 +16,7 @@ abcn='a\t-1\nb\t-2\nc\t-3'
 
 assert "analogy" "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$a0\n$bc")"
 assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
+assert "norm" "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
 assert "sum one"  "$(./svec sum <(echo $abc))" "$(echo "$abc")"

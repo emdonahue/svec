@@ -54,7 +54,7 @@ case "$CMD" in
 	;;
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
-	echo 'nyi'
+	awk '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v*v} else s+=v*v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>

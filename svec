@@ -26,7 +26,11 @@ case "$CMD" in
 	else
 	    "$0" join "$1" "$2" | {shift 2; "$0" join - "$@"}
 	fi
-	;;    
+	;;
+    negate) #Negates a vector
+	#<vector>
+	"$0" scale -1 "$1"
+	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
 	awk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print}' "$2"

@@ -11,10 +11,11 @@ a='a\t1'
 bc='b\t2\nc\t3'
 abc="$a\n$bc"
 abc2='a\t2\nb\t4\nc\t6'
-
+abcn='a\t-1\nb\t-2\nc\t-3'
 
 assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
+assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert "sum one"  "$(./svec sum <(echo $abc))" "$(echo "$abc")"
 assert "sum self"  "$(./svec sum <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
 assert "sum orthogonal dimensions"  "$(./svec sum <(echo $a) <(echo $bc))" "$(echo "$abc")"

@@ -12,6 +12,7 @@ a0='a\t0'
 bc='b\t2\nc\t3'
 abc="$a\n$bc"
 abc2='a\t2\nb\t4\nc\t6'
+abce2='a\t1\nb\t4\nc\t9'
 abcn='a\t-1\nb\t-2\nc\t-3'
 
 assert "add one" "$(./svec add <(echo $abc))" "$(echo "$abc")"
@@ -24,8 +25,10 @@ assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert "norm" "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
+assert "square" "$(./svec square <(echo $abc))" "$(echo $abce2)"
 assert "sum" "$(./svec sum <(echo $abc))" '6'
 assert "vecnorm" "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
+assert "vecsum" "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
 assert "word2vec pmi=1" "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"

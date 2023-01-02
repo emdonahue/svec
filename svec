@@ -66,6 +66,9 @@ case "$CMD" in
 	#<constant> <vector>
 	awk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print}' "$2"
 	;;
+    square) #Elementwise squaring
+	awk -F'\t' -vOFS='\t' '{$2*=$2; print}' "$1"
+	;;
     sum) #Sums all elements and returns a constant
 	#<vector>
 	awk '{n+=$NF} END {print n}' "$1"
@@ -73,6 +76,10 @@ case "$CMD" in
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
 	awk '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v*v} else s+=v*v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"
+	;;
+    vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
+	#<matrix>
+	awk '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>

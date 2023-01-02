@@ -55,7 +55,7 @@ case "$CMD" in
     neighbors) #Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	#<2D matrix> <vector>
 	# need a join of the norm of input (scalar, no need to join), norm of each vector (vecnorm and join on row), then we join input with every set of columns (every row) and dot them, dividing at the end by the norms. so really we should start with the dots, join the vecnorm, and save the norm as a constant
-	join -a1 -a2 -e0 -12 <(sort -k2,2 "$1") "$2" | aggregate "*"
+	join -a1 -a2 -e0 -12 <(sort -k2,2 "$1") "$2" | awk '{print $2,$1"\t"$3"\t"$4}' | aggregate "*" | "$0" vecsum
 	#join -a1 -a2 -e0 -12 "$1" "$2" | awk '{print $2,$1"\t"($3*$4)}' | awk '{v=$NF*$(NF-1); NF-=3; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
@@ -66,7 +66,12 @@ case "$CMD" in
 	#<constant> <vector>
 	awk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print}' "$2"
 	;;
-    square) #Elementwise squaring
+    sqrt) #Elementwise square root
+	#<matrix>
+	awk -F'\t' -vOFS='\t' '{$2=sqrt($2); print}' "$1"
+	;;
+    square) #Elementwise square
+	   #<matrix>
 	awk -F'\t' -vOFS='\t' '{$2*=$2; print}' "$1"
 	;;
     sum) #Sums all elements and returns a constant
@@ -75,11 +80,11 @@ case "$CMD" in
 	;;
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
-	"$0" square "$1" | "$0" vecsum
+	"$0" square "$1" | "$0" vecsum | "$0" sqrt
 	;;
     vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
 	#<matrix>
-	awk '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"	
+	awk '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,s); }' "$1"	
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>

@@ -1,12 +1,21 @@
 #!/bin/zsh
 
+# TODO have a way to set precision of numeric output
+
+aggregate() {
+    awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
+}
+
 CMD="$1"
 shift
 case "$CMD" in
-    #king man queen woman
+    add) #Element-wise sum of 2 or more vectors
+	#<vector> [<vector>]
+	"$0" join "$@" | aggregate "+"
+	;;
     analogy) #Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	#<vector> <vector> <vector>
-	"$0" sum <("$0" negate "$1") "$2" "$3"
+	"$0" add <("$0" negate "$1") "$2" "$3"
 	;;
     cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
@@ -16,9 +25,12 @@ case "$CMD" in
 	#<file>
 	sort "$1" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
+    dot)
+	"$0" join "$@" | aggregate '*'
+	;;
     detriangularize) #Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
 	#<triangular matrix>
-	awk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1"
+	awk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | sort
 	;;
     --help|-h|help) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	#<subcommand>
@@ -40,17 +52,23 @@ case "$CMD" in
 	#<vector>
 	"$0" scale -1 "$1"
 	;;
+    neighbors) #Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
+	#<2D matrix> <vector>
+	# need a join of the norm of input (scalar, no need to join), norm of each vector (vecnorm and join on row), then we join input with every set of columns (every row) and dot them, dividing at the end by the norms. so really we should start with the dots, join the vecnorm, and save the norm as a constant
+	join -a1 -a2 -e0 -12 <(sort -k2,2 "$1") "$2" | aggregate "*"
+	#join -a1 -a2 -e0 -12 "$1" "$2" | awk '{print $2,$1"\t"($3*$4)}' | awk '{v=$NF*$(NF-1); NF-=3; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"
+	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	#<vector>
-	awk '{m+=$NF*$NF} END {print sqrt(m)}' "$1"
+	awk '{n+=$NF*$NF} END {print sqrt(n)}' "$1"
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
 	awk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print}' "$2"
 	;;
-    sum) #Element-wise sum of 2 or more vectors
-	#<vector> [<vector>]
-	"$0" join "$@" | awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2+=$NF; NF--}; print}'
+    sum) #Sums all elements and returns a constant
+	#<vector>
+	awk '{n+=$NF} END {print n}' "$1"
 	;;
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
@@ -68,8 +86,3 @@ case "$CMD" in
 	"$0" help
 	;;
 esac
-
-#function _svec() {
-#    compadd $(grep -Eo '\w+\)\s#' "$9")
-#}
-#compdef _svec svec

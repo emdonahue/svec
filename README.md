@@ -22,8 +22,10 @@ usage: svec <subcommand> [arguments]
 	--help|-h|help - Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	join - Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
 	negate - Negates a vector
+	neighbors - Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	norm - Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	scale - Scale all elements by a constant
 	sum - Element-wise sum of 2 or more vectors
+	vecnorm - Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	word2vec - Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 ```

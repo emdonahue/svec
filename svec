@@ -2,6 +2,7 @@
 
 # TODO have a way to set precision of numeric output
 # TODO add a test to assert that all prints have become printfs
+# TODO debug fact that -e0 does not include 0s without -o (dot with orthogonal dimensions)
 
 aggregate() {
     awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
@@ -45,7 +46,7 @@ case "$CMD" in
 	if [[ $# -le 1 ]]; then
 	    cat "$1"
 	elif [[ $# -eq 2 ]]; then
-	    join -a1 -a2 -e0 -t$'\t' "$1" "$2"
+	    join -a1 -a2 -t$'\t' "$1" "$2"
 	else
 	    "$0" join "$1" "$2" | {shift 2; "$0" join - "$@"}
 	fi
@@ -55,11 +56,11 @@ case "$CMD" in
 	"$0" scale -1 "$1"
 	;;
     neighbors) #Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
-	#<2D matrix> <vector>
-	# need a join of the norm of input (scalar, no need to join), norm of each vector (vecnorm and join on row), then we join input with every set of columns (every row) and dot them, dividing at the end by the norms. so really we should start with the dots, join the vecnorm, and save the norm as a constant
-	$
-	join -a1 -a2 -e0 -12 <(sort -k2,2 "$1") "$2" | awk '{print $2,$1"\t"$3"\t"$4}' | aggregate "*" | "$0" vecsum
-	#join -a1 -a2 -e0 -12 "$1" "$2" | awk '{print $2,$1"\t"($3*$4)}' | awk '{v=$NF*$(NF-1); NF-=3; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"
+	#<2D matrix> <vector>	
+	VEC=$(mktemp)
+	trap "rm -f $VEC"
+	NORM=$(<"$2" tee "$VEC" | "$0" norm)
+	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | awk -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }'
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	#<vector>
@@ -87,7 +88,7 @@ case "$CMD" in
 	;;
     vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
 	#<matrix>
-	awk '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,s); }' "$1"	
+	awk '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printsum(); d=$0}; s+=v} END {printsum()} function printsum(){ printf("%s\t%.50g\n",d,s); s=0}' "$1"
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>

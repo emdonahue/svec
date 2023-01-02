@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 # TODO have a way to set precision of numeric output
+# TODO add a test to assert that all prints have become printfs
 
 aggregate() {
     awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
@@ -25,8 +26,9 @@ case "$CMD" in
 	#<file>
 	sort "$1" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
-    dot)
-	"$0" join "$@" | aggregate '*'
+    dot) #Dot product of multiple vectors
+	#]<vector>]
+	"$0" join "$@" | aggregate '*' | "$0" sum
 	;;
     detriangularize) #Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
 	#<triangular matrix>
@@ -55,6 +57,7 @@ case "$CMD" in
     neighbors) #Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	#<2D matrix> <vector>
 	# need a join of the norm of input (scalar, no need to join), norm of each vector (vecnorm and join on row), then we join input with every set of columns (every row) and dot them, dividing at the end by the norms. so really we should start with the dots, join the vecnorm, and save the norm as a constant
+	$
 	join -a1 -a2 -e0 -12 <(sort -k2,2 "$1") "$2" | awk '{print $2,$1"\t"$3"\t"$4}' | aggregate "*" | "$0" vecsum
 	#join -a1 -a2 -e0 -12 "$1" "$2" | awk '{print $2,$1"\t"($3*$4)}' | awk '{v=$NF*$(NF-1); NF-=3; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0; s=v} else s+=v} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,sqrt(s)); }' "$1"
 	;;

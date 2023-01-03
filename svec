@@ -4,16 +4,19 @@
 # TODO add a test to assert that all prints have become printfs
 # TODO debug fact that -e0 does not include 0s without -o (dot with orthogonal dimensions)
 
-aggregate() {
+merge() {
     awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
 }
+
+zparseopts -A opts -E -D g:=opts
+PRECISION=${opts[-g]:-20}
 
 CMD="$1"
 shift
 case "$CMD" in
     add) #Element-wise sum of 2 or more vectors
 	#<vector> [<vector>]
-	"$0" join "$@" | aggregate "+"
+	"$0" join "$@" | merge "+"
 	;;
     analogy) #Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	#<vector> <vector> <vector>
@@ -29,7 +32,7 @@ case "$CMD" in
 	;;
     dot) #Dot product of multiple vectors
 	#]<vector>]
-	"$0" join "$@" | aggregate '*' | "$0" sum
+	"$0" join "$@" | merge '*' | "$0" sum
 	;;
     detriangularize) #Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
 	#<triangular matrix>
@@ -37,7 +40,7 @@ case "$CMD" in
 	;;
     --help|-h|help) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	#<subcommand>
-	{[[ -z "$1" ]] && echo 'usage: svec <subcommand> [arguments]';
+	{[[ -z "$1" ]] && echo 'usage: svec <subcommand> [arguments] (All subcommands respect the -g flag to specify the decimal precision of arithmetic)';
 	 grep -A "${+1}" -- "$1.*)\s#" "$0" | sed -nE -e 's/\s*(.+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $1 \1/p"} | \
 	    sed 's/^\s*//; 2,$ s/^/\t/'	
 	;;
@@ -57,9 +60,9 @@ case "$CMD" in
 	;;
     neighbors) #Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	#<2D matrix> <vector>	
-	VEC=$(mktemp)
+	local VEC=$(mktemp)
 	trap "rm -f $VEC"
-	NORM=$(<"$2" tee "$VEC" | "$0" norm)
+	local NORM=$(<"$2" tee "$VEC" | "$0" norm)
 	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | awk -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }'
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix

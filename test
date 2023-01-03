@@ -22,6 +22,7 @@ assert "add n" "$(./svec add <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(
 assert "analogy" "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$a0\n$bc")"
 assert "detriangularize" "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
 assert "dot" "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
+assert "dot orthogonal" "$(./svec dot <(echo "$a") <(echo "$bc"))" '0'
 assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert "norm" "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"

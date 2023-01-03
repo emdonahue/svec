@@ -1,7 +1,5 @@
 #!/bin/zsh
 
-# TODO have a way to set precision of numeric output
-# TODO add a test to assert that all prints have become printfs
 # TODO debug fact that -e0 does not include 0s without -o (dot with orthogonal dimensions)
 
 merge() {
@@ -44,12 +42,13 @@ case "$CMD" in
 	 grep -A "${+1}" -- "$1.*)\s#" "$0" | sed -nE -e 's/\s*(.+)\)\s#(.+)$/\1 - \2/p' -e "s/^\s*#(.+)/usage: $1 \1/p"} | \
 	    sed 's/^\s*//; 2,$ s/^/\t/'	
 	;;
-    join) #Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
+    join) #Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors. 
 	#<vector> [<vector>]
 	if [[ $# -le 1 ]]; then
 	    cat "$1"
 	elif [[ $# -eq 2 ]]; then
-	    join -a1 -a2 -t$'\t' "$1" "$2"
+	    #-e requires -o, which means we must know the number of columns, so we must convert to a different schema
+	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$'\037' <(sed 's/\t/'$'\037''/1' "$1") <(sed 's/\t/'$'\037''/1' "$2") | tr $'\037' '\t'
 	else
 	    "$0" join "$1" "$2" | {shift 2; "$0" join - "$@"}
 	fi

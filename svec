@@ -9,7 +9,7 @@ merge() {
 }
 
 zparseopts -A opts -E -D g:=opts
-PRECISION=${opts[-g]:-20}
+local PRECISION=${opts[-g]:-20}
 
 CMD="$1"
 shift
@@ -63,19 +63,19 @@ case "$CMD" in
 	local VEC=$(mktemp)
 	trap "rm -f $VEC"
 	local NORM=$(<"$2" tee "$VEC" | "$0" norm)
-	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | awk -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {printnorm(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {printnorm()} function printnorm(){ printf("%s\t%.50g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }'
+	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | awk -M -vP="$PRECISION" -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ printf("%s\t%."P"g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }'
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	#<vector>
-	awk '{n+=$NF*$NF} END {print sqrt(n)}' "$1"
+	awk -M -vP="$PRECISION" '{n+=$NF*$NF} END {printf("%."P"g\n",sqrt(n))}' "$1"
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
-	awk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print}' "$2"
+	awk -M -F'\t' -vP="$PRECISION" -vOFS='\t' '{$2*=('"$1"'); printf("%s\t%."P"g\n",$1,$2)}' "$2"
 	;;
     sqrt) #Elementwise square root
 	#<matrix>
-	awk -F'\t' -vOFS='\t' '{$2=sqrt($2); print}' "$1"
+	awk -M -vP="$PRECISION" -F'\t' -vOFS='\t' '{$2=sqrt($2); printf("%s\t%."P"g\n",$1,$2)}' "$1"
 	;;
     square) #Elementwise square
 	   #<matrix>

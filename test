@@ -26,6 +26,7 @@ assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert "norm" "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
+assert "scale precision"  "$(./svec scale -g 3 '.3333333333' <(echo $a))" "$(echo "a\t0.333")"
 assert "square" "$(./svec square <(echo $abc))" "$(echo $abce2)"
 assert "sum" "$(./svec sum <(echo $abc))" '6'
 assert "vecnorm" "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"

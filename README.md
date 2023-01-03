@@ -14,7 +14,7 @@ The subcommands all operate on this common format, and emphasize streaming and d
 
 ## Documentation
 ```
-usage: svec <subcommand> [arguments]
+usage: svec <subcommand> [arguments] (All subcommands respect the -g flag to specify the decimal precision of arithmetic)
 	add - Element-wise sum of 2 or more vectors
 	analogy - Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	cooccurrences - Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
@@ -22,7 +22,7 @@ usage: svec <subcommand> [arguments]
 	dot - Dot product of multiple vectors
 	detriangularize - Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
 	--help|-h|help - Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
-	join - Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.)
+	join - Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors. 
 	negate - Negates a vector
 	neighbors - Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	norm - Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix

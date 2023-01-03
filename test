@@ -8,7 +8,6 @@ assert() {
 }
 
 a='a\t1'
-a0='a\t0'
 bc='b\t2\nc\t3'
 abc="$a\n$bc"
 abc2='a\t2\nb\t4\nc\t6'
@@ -19,7 +18,7 @@ assert "add one" "$(./svec add <(echo $abc))" "$(echo "$abc")"
 assert "add self" "$(./svec add <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
 assert "add orthogonal dimensions"  "$(./svec add <(echo $a) <(echo $bc))" "$(echo "$abc")"
 assert "add n" "$(./svec add <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(echo "$abc2")"
-assert "analogy" "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$a0\n$bc")"
+assert "analogy" "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$bc")"
 assert "detriangularize" "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
 assert "dot" "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert "dot orthogonal" "$(./svec dot <(echo "$a") <(echo "$bc"))" '0'

@@ -14,7 +14,7 @@ shift
 case "$CMD" in
     add) #Element-wise sum of 2 or more vectors
 	#<vector> [<vector>]
-	"$0" join "$@" | merge "+"
+	"$0" join "$@" | merge "+" | "$0" sparse
 	;;
     analogy) #Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	#<vector> <vector> <vector>
@@ -71,6 +71,10 @@ case "$CMD" in
     scale) #Scale all elements by a constant
 	#<constant> <vector>
 	awk -M -F'\t' -vP="$PRECISION" -vOFS='\t' '{$2*=('"$1"'); printf("%s\t%."P"g\n",$1,$2)}' "$2"
+	;;
+    sparse) #Removes 0 valued dimensions to create sparse vector or matrix
+	#<matrix>
+	awk -F'\t' -vOFS='\t' '$NF!=0' "$1"
 	;;
     sqrt) #Elementwise square root
 	#<matrix>

@@ -26,7 +26,9 @@ usage: svec <subcommand> [arguments] (All subcommands respect the -g flag to spe
 	negate - Negates a vector
 	neighbors - Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	norm - Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
+	row - Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
 	scale - Scale all elements by a constant
+	sparse - Removes 0 valued dimensions to create sparse vector or matrix
 	sqrt - Elementwise square root
 	square - Elementwise square
 	sum - Sums all elements and returns a constant

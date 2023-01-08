@@ -24,6 +24,7 @@ assert "dot" "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert "dot orthogonal" "$(./svec dot <(echo "$a") <(echo "$bc"))" '0'
 assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert "norm" "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
+assert 'row' "$(./svec row a <(echo "a a\t1\na b\t2\nb a\t3\nb b\t4"))" "$(echo "a\t1\nb\t2")"
 assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
 assert "scale precision"  "$(./svec scale -g 3 '.3333333333' <(echo $a))" "$(echo "a\t0.333")"

@@ -60,7 +60,7 @@ case "$CMD" in
 	local VEC=$(mktemp --suffix=.svec)
 	trap "rm -f $VEC"
 	local NORM=$(<"$2" tee "$VEC" | "$0" norm)
-	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | awk -M -vP="$PRECISION" -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ printf("%s\t%."P"g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }'
+	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | awk -M -vP="$PRECISION" -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ printf("%s\t%."P"g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }' | "$0" sparse
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	#<vector>
@@ -68,7 +68,7 @@ case "$CMD" in
 	;;
     row) #Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
 	#DIMENSION MATRIX
-	grep -E "^$1 " "$2" | sed -E 's/^[^ ]+ (.*)/\1/'
+	grep -E "^$1 " "${2:--}" | sed -E 's/^[^ ]+ (.*)/\1/'
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>

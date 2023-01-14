@@ -1,18 +1,31 @@
 #!/bin/zsh
 
-merge() {
-    awk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
-}
+#precision=3.322 decimal digits
+# 54 precision for 64 bitdoubles, 113 precision for 128 bit doubles
+# https://www.gnu.org/software/coreutils/manual/html_node/Sorting-files-for-join.html
+# use c locale: LC_ALL=C, sort -k 1b,1, or LC_COLLATE=C
+
+set -o errexit
+set -o pipefail
+if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
 zparseopts -A opts -E -D g:=opts
 local PRECISION=${opts[-g]:-20}
+
+svecawk() {
+    awk -M -vPREC=$((3.322 * $PRECISION)) -vCONVFMT="%.$PRECISIONg" "$@"
+}
+
+arithmetic() {
+    svecawk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
+}
 
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
     add) #Element-wise sum of 2 or more vectors
 	#<vector> [<vector>]
-	"$0" join "$@" | merge "+" | "$0" sparse
+	"$0" join "$@" | arithmetic "+" | "$0" sparse
 	;;
     analogy) #Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	#<vector> <vector> <vector>
@@ -20,7 +33,7 @@ case "$CMD" in
 	;;
     cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
-	tr -s '[:space:]' '\n' < "$2" | awk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
+	tr -s '[:space:]' '\n' < "$2" | svecawk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
 	;;
     counts) #Prints a vector of counts from a newline-separated stream of tokens
 	#<file>
@@ -28,11 +41,11 @@ case "$CMD" in
 	;;
     dot) #Dot product of multiple vectors
 	#[<vector>]
-	"$0" join "$@" | merge '*' | "$0" sum
+	"$0" join "$@" | arithmetic '*' | "$0" sum
 	;;
     detriangularize) #Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
 	#<triangular matrix>
-	awk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | sort
+	svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | sort
 	;;
     --help|-h|help) #Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
 	#<subcommand>
@@ -60,11 +73,11 @@ case "$CMD" in
 	local VEC=$(mktemp --suffix=.svec)
 	trap "rm -f $VEC"
 	local NORM=$(<"$2" tee "$VEC" | "$0" norm)
-	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | awk -M -vP="$PRECISION" -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ printf("%s\t%."P"g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }' | "$0" sparse
+	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | svecawk -M -vP="$PRECISION" -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ printf("%s\t%."P"g\n",d,dot/(sqrt(norm)*VNORM)); norm=dot=0 }' | "$0" sparse
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	#<vector>
-	awk -M -vP="$PRECISION" '{n+=$NF*$NF} END {printf("%."P"g\n",sqrt(n))}' "$1"
+	svecawk -M -vP="$PRECISION" '{n+=$NF*$NF} END {printf("%."P"g\n",sqrt(n))}' "$1"
 	;;
     row) #Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
 	#DIMENSION MATRIX
@@ -72,23 +85,23 @@ case "$CMD" in
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
-	awk -M -F'\t' -vP="$PRECISION" -vOFS='\t' '{$2*=('"$1"'); printf("%s\t%."P"g\n",$1,$2)}' "$2"
+	svecawk -M -F'\t' -vP="$PRECISION" -vOFS='\t' '{$2*=('"$1"'); printf("%s\t%."P"g\n",$1,$2)}' "$2"
 	;;
     sparse) #Removes 0 valued dimensions to create sparse vector or matrix
 	#<matrix>
-	awk -F'\t' -vOFS='\t' '$NF!=0' "$1"
+	svecawk -F'\t' -vOFS='\t' '$NF!=0' "$1"
 	;;
     sqrt) #Elementwise square root
 	#<matrix>
-	awk -M -vP="$PRECISION" -F'\t' -vOFS='\t' '{$2=sqrt($2); printf("%s\t%."P"g\n",$1,$2)}' "$1"
+	svecawk -M -vP="$PRECISION" -F'\t' -vOFS='\t' '{$2=sqrt($2); printf("%s\t%."P"g\n",$1,$2)}' "$1"
 	;;
     square) #Elementwise square
 	   #<matrix>
-	awk -M -vP="$PRECISION" -F'\t' -vOFS='\t' '{$2*=$2; printf("%s\t%."P"g\n",$1,$2)}' "$1"
+	svecawk -M -vP="$PRECISION" -F'\t' -vOFS='\t' '{$2*=$2; printf("%s\t%."P"g\n",$1,$2)}' "$1"
 	;;
     sum) #Sums all elements and returns a constant
 	#<vector>
-	awk -M -vP="$PRECISION" '{n+=$NF} END {printf("%."P"g\n",n)}' "$1"
+	svecawk -M -vP="$PRECISION" '{n+=$NF} END {printf("%."P"g\n",n)}' "$1"
 	;;
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
@@ -96,14 +109,14 @@ case "$CMD" in
 	;;
     vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
 	#<matrix>
-	awk -M -vP="$PRECISION" '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printsum(); d=$0}; s+=v} END {printsum()} function printsum(){ printf("%s\t%."P"g\n",d,s); s=0}' "$1"
+	svecawk -M -vP="$PRECISION" '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printsum(); d=$0}; s+=v} END {printsum()} function printsum(){ printf("%s\t%."P"g\n",d,s); s=0}' "$1"
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>
 	local BIGRAMS=$(mktemp --suffix=.svec) UNIGRAMS=$(mktemp --suffix=.svec)
 	trap "rm -f $UNIGRAMS $BIGRAMS" EXIT
-	local NUM_UNIGRAMS=$(tr -s '[:space:]' '\n' < "$2" | sed '/^\s*$/d' | awk -vW="$1" -vUs="$0 counts ->$UNIGRAMS" -vBs="$0 counts ->$BIGRAMS" '{print | Us; for (i=1;i<=W;i++) { if(c[i]) { print (c[i]<$0) ? c[i]" "$0 : $0" "c[i] | Bs }; c[i]=c[i+1] }; c[W]=$0 } END {print NR}')
-	join -12 <(join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2) "$UNIGRAMS" | awk -M -vP="$PRECISION" -vU="$NUM_UNIGRAMS" -vB="$((NUM_UNIGRAMS * $1 - ($1*($1+1)/2)))" '{printf("%s %s\t%."P"g\n",$2,$1,$3/B/($4/U*($5/U)))}'
+	local NUM_UNIGRAMS=$(tr -s '[:space:]' '\n' < "$2" | sed '/^\s*$/d' | svecawk -vW="$1" -vUs="$0 counts ->$UNIGRAMS" -vBs="$0 counts ->$BIGRAMS" '{print | Us; for (i=1;i<=W;i++) { if(c[i]) { print (c[i]<$0) ? c[i]" "$0 : $0" "c[i] | Bs }; c[i]=c[i+1] }; c[W]=$0 } END {print NR}')
+	join -12 <(join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2) "$UNIGRAMS" | svecawk -vP="$PRECISION" -vU="$NUM_UNIGRAMS" -vB="$((NUM_UNIGRAMS * $1 - ($1*($1+1)/2)))" '{printf("%s %s\t%."P"g\n",$2,$1,$3/B/($4/U*($5/U)))}'
 	#log($3)-log(B)-((log($4)+log($5)-(2*log(U))))
 	;;
     *)

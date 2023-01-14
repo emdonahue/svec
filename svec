@@ -1,18 +1,17 @@
 #!/bin/zsh
 
-#precision=3.322 decimal digits
-# 54 precision for 64 bitdoubles, 113 precision for 128 bit doubles
-# https://www.gnu.org/software/coreutils/manual/html_node/Sorting-files-for-join.html
-# use c locale: LC_ALL=C, sort -k 1b,1, or LC_COLLATE=C
+#TODO add flags to help menu
 
 set -o errexit
 set -o pipefail
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
 zparseopts -A opts -E -D g:=opts
-local PRECISION=${opts[-g]:-17}
+local PRECISION=${opts[-g]:-17} #Sets the decimal precision of numeric calculations.
+export LC_COLLATE=${opts[-l]:-C} #Selects the locale for determining sort order of dimensions.
 
 svecawk() {
+    #3.322 is approximate bits of precision needed per decimal digit, per awk manual.
     awk -M -vPREC=$((3.322 * $PRECISION)) -vCONVFMT="%.${PRECISION}g" -vOFMT="%.${PRECISION}g" "$@"
 }
 
@@ -33,7 +32,7 @@ case "$CMD" in
 	;;
     cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
-	tr -s '[:space:]' '\n' < "$2" | svecawk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
+	tr -s '[:space:]' '\n' < "$2" | sed '1 {/^\s*$/d}' | svecawk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
 	;;
     counts) #Prints a vector of counts from a newline-separated stream of tokens
 	#<file>
@@ -97,11 +96,11 @@ case "$CMD" in
 	;;
     square) #Elementwise square
 	   #<matrix>
-	svecawk -M -vP="$PRECISION" -F'\t' -vOFS='\t' '{$2*=$2; printf("%s\t%."P"g\n",$1,$2)}' "$1"
+	svecawk -F'\t' -vOFS='\t' '{$2*=$2; print $1,$2}' "$1"
 	;;
     sum) #Sums all elements and returns a constant
 	#<vector>
-	svecawk -M -vP="$PRECISION" '{n+=$NF} END {printf("%."P"g\n",n)}' "$1"
+	svecawk '{n+=$NF} END {print n}' "$1"
 	;;
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
@@ -109,14 +108,14 @@ case "$CMD" in
 	;;
     vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
 	#<matrix>
-	svecawk -M -vP="$PRECISION" '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printsum(); d=$0}; s+=v} END {printsum()} function printsum(){ printf("%s\t%."P"g\n",d,s); s=0}' "$1"
+	svecawk -vOFS='\t' '{v=$NF; NF-=2; if (!d) d=$0; if (d!=$0) {printsum(); d=$0}; s+=v} END {printsum()} function printsum(){ print d,s; s=0}' "$1"
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>
 	local BIGRAMS=$(mktemp --suffix=.svec) UNIGRAMS=$(mktemp --suffix=.svec)
 	trap "rm -f $UNIGRAMS $BIGRAMS" EXIT
-	local NUM_UNIGRAMS=$(tr -s '[:space:]' '\n' < "$2" | sed '/^\s*$/d' | svecawk -vW="$1" -vUs="$0 counts ->$UNIGRAMS" -vBs="$0 counts ->$BIGRAMS" '{print | Us; for (i=1;i<=W;i++) { if(c[i]) { print (c[i]<$0) ? c[i]" "$0 : $0" "c[i] | Bs }; c[i]=c[i+1] }; c[W]=$0 } END {print NR}')
-	join -12 <(join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2) "$UNIGRAMS" | svecawk -vP="$PRECISION" -vU="$NUM_UNIGRAMS" -vB="$((NUM_UNIGRAMS * $1 - ($1*($1+1)/2)))" '{printf("%s %s\t%."P"g\n",$2,$1,$3/B/($4/U*($5/U)))}'
+	local NUM_UNIGRAMS=$(tr -s '[:space:]' '\n' < "$2" | sed '1 {/^\s*$/d}' | svecawk -vW="$1" -vUs="$0 counts ->$UNIGRAMS" -vBs="$0 counts ->$BIGRAMS" '{print | Us; for (i=1;i<=W;i++) { if(c[i]) { print (c[i]<$0) ? c[i]" "$0 : $0" "c[i] | Bs }; c[i]=c[i+1] }; c[W]=$0 } END {print NR}')
+	join -12 <(join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2) "$UNIGRAMS" | svecawk -vU="$NUM_UNIGRAMS" -vB="$((NUM_UNIGRAMS * $1 - ($1*($1+1)/2)))" '{print $2,$1 "\t" $3/B/($4/U*($5/U))}'
 	#log($3)-log(B)-((log($4)+log($5)-(2*log(U))))
 	;;
     *)

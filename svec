@@ -32,11 +32,11 @@ case "$CMD" in
 	;;
     cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
-	tr -s '[:space:]' '\n' < "$2" | sed '1 {/^\s*$/d}' | svecawk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) { if (c[i]<$0) { print c[i],$0 } else { print $0,c[i] }}; c[i]=c[i+1] }; c[W]=$0 }' | sort | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) ([[:alnum:]]+) ([[:alnum:]]+)/\2 \3\t\1/'
+	tr -s '[:space:]' '\n' < "$2" | awk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) print (c[i]<$0) ? c[i] FS $0 : $0 FS c[i]; c[i]=c[i+1] }; c[W]=$0; }' | "$0" counts
 	;;
     counts) #Prints a vector of counts from a newline-separated stream of tokens
 	#<file>
-	sort "$1" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
+	sort "${1:--}" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
     dot) #Dot product of multiple vectors
 	#[<vector>]

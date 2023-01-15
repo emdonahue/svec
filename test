@@ -19,6 +19,7 @@ assert "add self" "$(./svec add <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
 assert "add orthogonal dimensions"  "$(./svec add <(echo $a) <(echo $bc))" "$(echo "$abc")"
 assert "add n" "$(./svec add <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(echo "$abc2")"
 assert "analogy" "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$bc")"
+assert 'cooccurrences' "$(./svec cooccurrences 2 <(echo 'a b b'))" "$(echo "a b\t2\nb b\t1")"
 assert 'counts' "$(./svec counts <(echo 'c\nc\nc\nb\na\nb'))" "$(echo "$abc")"
 assert "detriangularize" "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
 assert "dot" "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'

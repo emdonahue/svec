@@ -10,6 +10,8 @@ zparseopts -A opts -E -D g:=opts
 local PRECISION=${opts[-g]:-17} #Sets the decimal precision of numeric calculations.
 export LC_COLLATE=${opts[-l]:-C} #Selects the locale for determining sort order of dimensions.
 
+local US=$'\037'
+
 svecawk() {
     #3.322 is approximate bits of precision needed per decimal digit, per awk manual.
     awk -M -vPREC=$((3.322 * $PRECISION)) -vCONVFMT="%.${PRECISION}g" -vOFMT="%.${PRECISION}g" "$@"
@@ -58,7 +60,7 @@ case "$CMD" in
 	    cat "$1"
 	elif [[ $# -eq 2 ]]; then
 	    #-e requires -o, which means we must know the number of columns, so we must convert to a different schema
-	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$'\037' <(sed 's/\t/'$'\037''/1' "$1") <(sed 's/\t/'$'\037''/1' "$2") | tr $'\037' '\t'
+	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed 's/\t/'$'\037''/1' "$1") <(sed 's/\t/'$'\037''/1' "$2") | tr $'\037' '\t'
 	else
 	    "$0" join "$1" "$2" | {shift 2; "$0" join - "$@"}
 	fi
@@ -72,12 +74,12 @@ case "$CMD" in
 	local VEC=$(mktemp --suffix=.svec)
 	trap "rm -f $VEC"
 	local NORM=$(<"$2" tee "$VEC" | "$0" norm)
-	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "$1") "$VEC" | svecawk -vOFS='\t' -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ print d,dot/(sqrt(norm)*VNORM); norm=dot=0 }' | "$0" sparse
+	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "${1:--}") "$VEC" | svecawk -vOFS='\t' -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ print d,dot/(sqrt(norm)*VNORM); norm=dot=0 }' | "$0" sparse
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	#<vector>
 	svecawk '{n+=$NF*$NF} END {print sqrt(n)}' "$1"
-	;;
+	;;    
     row) #Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
 	#DIMENSION MATRIX
 	grep -E "^$1 " "${2:--}" | sed -E 's/^[^ ]+ (.*)/\1/'
@@ -104,7 +106,22 @@ case "$CMD" in
 	;;
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
-	"$0" square "$1" | "$0" vecsum | "$0" sqrt
+	"$0" square "${1:--}" | "$0" vecsum | "$0" sqrt
+	;;
+    vecnormalize) #Normalizes vectors defined by the first N-1 dimension of MATRIX
+	#get vec norms: a b_\tx
+	#file of vecs: a b_ c\ty
+	#join vec norms to vecs: a b c\tx\ty
+	#requires that join key be n-1 dims
+	local NORMS=$(mktemp --suffix=.svec) VECS=$(mktemp --suffix=.svec)
+	trap "rm -f $NORMS $VECS" EXIT
+	< "${1:--}" tee >("$0" vecnorm | sed 's/\t/'$'\037''\t/' > "$NORMS") > >(sed -E 's/( [^ ]+\t)/'$'\037''\1/' > "$VECS")
+	join -t$'\037' "$VECS" "$NORMS" | arithmetic '/' | tr -d $'\037'
+	
+	#< "${1:--}" tee  >("$0" vecnorm - | sed 's/\t/'$'\037''x\t/' > "$NORMS") | sed -E 's/( [^ ]+\t)/'$'\037''x\1/' > "$VECS"
+	#echo 'cat'
+	#cat $NORMS $VECS
+	#join -t$'\037' "$VECS" "$NORMS"
 	;;
     vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
 	#<matrix>

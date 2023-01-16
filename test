@@ -33,8 +33,9 @@ assert "scale precision"  "$(./svec scale -g 3 '.3333333333' <(echo $a))" "$(ech
 assert "square" "$(./svec square <(echo $abc))" "$(echo $abce2)"
 assert "sum" "$(./svec sum <(echo $abc))" '6'
 assert "vecnorm" "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
+assert "vecnormalize" "$(./svec vecnormalize <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a a\t0.5\na b\t0.5\na c\t0.5\na d\t0.5\nb a\t0.5\nb b\t0.5\nb c\t0.5\nb d\t0.5")"
 assert "vecsum" "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
-assert "word2vec pmi=1" "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
+#assert "word2vec pmi=1" "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"

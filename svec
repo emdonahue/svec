@@ -60,7 +60,7 @@ case "$CMD" in
 	    cat "$1"
 	elif [[ $# -eq 2 ]]; then
 	    #-e requires -o, which means we must know the number of columns, so we must convert to a different schema
-	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed 's/\t/'$'\037''/1' "$1") <(sed 's/\t/'$'\037''/1' "$2") | tr $'\037' '\t'
+	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed "s/\t/$US/1" "$1") <(sed "s/\t/$US/1" "$2") | tr $US '\t'
 	else
 	    "$0" join "$1" "$2" | {shift 2; "$0" join - "$@"}
 	fi
@@ -109,19 +109,10 @@ case "$CMD" in
 	"$0" square "${1:--}" | "$0" vecsum | "$0" sqrt
 	;;
     vecnormalize) #Normalizes vectors defined by the first N-1 dimension of MATRIX
-	#get vec norms: a b_\tx
-	#file of vecs: a b_ c\ty
-	#join vec norms to vecs: a b c\tx\ty
-	#requires that join key be n-1 dims
 	local NORMS=$(mktemp --suffix=.svec) VECS=$(mktemp --suffix=.svec)
 	trap "rm -f $NORMS $VECS" EXIT
-	< "${1:--}" tee >("$0" vecnorm | sed 's/\t/'$'\037''\t/' > "$NORMS") > >(sed -E 's/( [^ ]+\t)/'$'\037''\1/' > "$VECS")
-	join -t$'\037' "$VECS" "$NORMS" | arithmetic '/' | tr -d $'\037'
-	
-	#< "${1:--}" tee  >("$0" vecnorm - | sed 's/\t/'$'\037''x\t/' > "$NORMS") | sed -E 's/( [^ ]+\t)/'$'\037''x\1/' > "$VECS"
-	#echo 'cat'
-	#cat $NORMS $VECS
-	#join -t$'\037' "$VECS" "$NORMS"
+	< "${1:--}" tee >("$0" vecnorm | sed "s/\t/$US\t/" > "$NORMS") > >(sed -E "s/( [^ ]+\t)/$US\1/" > "$VECS")
+	join -t"$US" "$VECS" "$NORMS" | arithmetic '/' | tr -d "$US"
 	;;
     vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
 	#<matrix>

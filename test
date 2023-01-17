@@ -25,7 +25,7 @@ assert "detriangularize" "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$
 assert "dot" "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert "dot orthogonal" "$(./svec dot <(echo "$a") <(echo "$bc"))" '0'
 assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
-assert 'neighbors' "$(./svec neighbors <(echo $a) <(echo 'a a\t1\nb b\t2\nc a\t-1'))" "$(echo "a\t1\nc\t-1")"
+assert 'neighbors' "$(./svec neighbors <(echo "a\t3") <(echo 'a a\t2\nb b\t2\nc a\t-2'))" "$(echo "a\t1\nc\t-1")"
 assert "norm" "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert 'row' "$(./svec row a <(echo "a a\t1\na b\t2\nb a\t3\nb b\t4"))" "$(echo "a\t1\nb\t2")"
 assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"

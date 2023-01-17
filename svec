@@ -21,6 +21,12 @@ arithmetic() {
     svecawk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
 }
 
+tmp() {
+    local TMPFILE=$(mktemp --suffix=.svec)
+    trap "rm -f $TMPFILE" EXIT
+    echo "$TMPFILE"
+}
+
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
@@ -71,9 +77,11 @@ case "$CMD" in
 	;;
     neighbors) #Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	#<vector> <2D matrix>
-	local VEC=$(mktemp --suffix=.svec)
-	trap "rm -f $VEC" EXIT
+	local VEC=$(tmp)	
 	local NORM=$(<"${1:--}" tee "$VEC" | "$0" norm)
+	#echo "NORM: $NORM"
+	#echo "vec:"
+	#cat $VEC
 	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "${2:--}") "$VEC" | svecawk -vOFS='\t' -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ print d,dot/(sqrt(norm)*VNORM); norm=dot=0 }' | "$0" sparse
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
@@ -110,8 +118,7 @@ case "$CMD" in
 	;;
     vecnormalize) #Normalizes vectors defined by the first N-1 dimension of MATRIX
 	#MATRIX
-	local NORMS=$(mktemp --suffix=.svec) VECS=$(mktemp --suffix=.svec)
-	trap "rm -f $NORMS $VECS" EXIT
+	local NORMS=$(tmp) VECS=$(tmp)
 	< "${1:--}" tee >("$0" vecnorm | sed "s/\t/$US\t/" > "$NORMS") > >(sed -E "s/( [^ ]+\t)/$US\1/" > "$VECS")
 	join -t"$US" "$VECS" "$NORMS" | arithmetic '/' | tr -d "$US"
 	;;
@@ -121,8 +128,7 @@ case "$CMD" in
 	;;
     word2vec) #Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 	#<co-occurrence window size> <token file>
-	local BIGRAMS=$(mktemp --suffix=.svec) UNIGRAMS=$(mktemp --suffix=.svec)
-	trap "rm -f $UNIGRAMS $BIGRAMS" EXIT
+	local BIGRAMS=$(tmp) UNIGRAMS=$(tmp)
 	local NUM_UNIGRAMS=$(tr -s '[:space:]' '\n' < "$2" | sed '1 {/^\s*$/d}' | svecawk -vW="$1" -vUs="$0 counts ->$UNIGRAMS" -vBs="$0 counts ->$BIGRAMS" '{print | Us; for (i=1;i<=W;i++) { if(c[i]) { print (c[i]<$0) ? c[i]" "$0 : $0" "c[i] | Bs }; c[i]=c[i+1] }; c[W]=$0 } END {print NR}')
 	join -12 <(join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2) "$UNIGRAMS" | svecawk -vU="$NUM_UNIGRAMS" -vB="$((NUM_UNIGRAMS * $1 - ($1*($1+1)/2)))" '{print $2,$1 "\t" $3/B/($4/U*($5/U))}'
 	#log($3)-log(B)-((log($4)+log($5)-(2*log(U))))

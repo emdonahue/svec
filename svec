@@ -100,7 +100,7 @@ case "$CMD" in
 	#VECTOR
 	local VEC=$(tmp)
 	local NORM=$(<"${1:--}" tee "$VEC" | self "$0" norm)
-	self "$0" map "\$2*$NORM" "$VEC"
+	self "$0" map "\$2/$NORM" "$VEC"
 	;;
     row) #Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
 	#DIMENSION MATRIX

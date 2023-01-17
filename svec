@@ -21,6 +21,10 @@ arithmetic() {
     svecawk -F'\t' -vOFS=$'\t' '{while (2<NF) {$2'"$1"'=$NF; NF--}; print}'
 }
 
+self() {
+    "$1" ${(kv)opts} "${@:2}"
+}
+
 tmp() {
     local TMPFILE=$(mktemp --suffix=.svec)
     trap "rm -f $TMPFILE" EXIT
@@ -32,15 +36,15 @@ CMD="$1"
 case "$CMD" in
     add) #Element-wise sum of 2 or more vectors
 	#<vector> [<vector>]
-	"$0" join "$@" | arithmetic "+" | "$0" sparse
+	self "$0" join "$@" | arithmetic "+" | self "$0" sparse
 	;;
     analogy) #Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	#<vector> <vector> <vector>
-	"$0" add <("$0" negate "$1") "$2" "$3"
+	self "$0" add <(self "$0" negate "$1") "$2" "$3"
 	;;
     cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
 	#<window> <file>
-	tr -s '[:space:]' '\n' < "$2" | awk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) print (c[i]<$0) ? c[i] FS $0 : $0 FS c[i]; c[i]=c[i+1] }; c[W]=$0; }' | "$0" counts
+	tr -s '[:space:]' '\n' < "$2" | awk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) print (c[i]<$0) ? c[i] FS $0 : $0 FS c[i]; c[i]=c[i+1] }; c[W]=$0; }' | self "$0" counts
 	;;
     counts) #Prints a vector of counts from a newline-separated stream of tokens
 	#<file>
@@ -48,7 +52,7 @@ case "$CMD" in
 	;;
     dot) #Dot product of multiple vectors
 	#[<vector>]
-	"$0" join "$@" | arithmetic '*' | "$0" sum
+	self "$0" join "$@" | arithmetic '*' | self "$0" sum
 	;;
     detriangularize) #Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
 	#<triangular matrix>
@@ -68,33 +72,43 @@ case "$CMD" in
 	    #-e requires -o, which means we must know the number of columns, so we must convert to a different schema
 	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed "s/\t/$US/1" "$1") <(sed "s/\t/$US/1" "$2") | tr $US '\t'
 	else
-	    "$0" join "$1" "$2" | {shift 2; "$0" join - "$@"}
+	    self "$0" join "$1" "$2" | {shift 2; self "$0" join - "$@"}
 	fi
+	;;
+    map) #Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
+	#EXPRESSION VECTOR
+	svecawk -F'\t' -vOFS='\t' '{$2='"$1"'; print $1,$2}' "${2:--}"
 	;;
     negate) #Negates a vector
 	#<vector>
-	"$0" scale -1 "$1"
+	self "$0" scale -1 "$1"
 	;;
     neighbors) #Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	#<vector> <2D matrix>
 	local VEC=$(tmp)	
-	local NORM=$(<"${1:--}" tee "$VEC" | "$0" norm)
+	local NORM=$(<"${1:--}" tee "$VEC" | self "$0" norm)
 	#echo "NORM: $NORM"
 	#echo "vec:"
 	#cat $VEC
-	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "${2:--}") "$VEC" | svecawk -vOFS='\t' -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ print d,dot/(sqrt(norm)*VNORM); norm=dot=0 }' | "$0" sparse
+	join -a1 -e"0" -o 1.1,0,1.3,2.2 -12 <(sort -k2,2 "${2:--}") "$VEC" | svecawk -vOFS='\t' -vVNORM="$NORM" '{v1=$(NF-1); v2=$NF; NF-=3; if (!d) d=$0; if (d!=$0) {output(); d=$0}; norm+=v1*v1; dot+=v1*v2} END {output()} function output(){ print d,dot/(sqrt(norm)*VNORM); norm=dot=0 }' | self "$0" sparse
 	;;
     norm) #Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
 	#<vector>
 	svecawk '{n+=$NF*$NF} END {print sqrt(n)}' "$1"
-	;;    
+	;;
+    normalize) #Normalizes VECTOR using the Euclidean norm.
+	#VECTOR
+	local VEC=$(tmp)
+	local NORM=$(<"${1:--}" tee "$VEC" | self "$0" norm)
+	
+	;;
     row) #Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
 	#DIMENSION MATRIX
 	grep -E "^$1 " "${2:--}" | sed -E 's/^[^ ]+ (.*)/\1/'
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>
-	svecawk -F'\t' -vOFS='\t' '{$2*=('"$1"'); print $1,$2}' "$2"
+	self "$0" map '$2*'"$1" "${2:--}"
 	;;
     sparse) #Removes 0 valued dimensions to create sparse vector or matrix
 	#<matrix>
@@ -102,11 +116,11 @@ case "$CMD" in
 	;;
     sqrt) #Elementwise square root
 	#<matrix>
-	svecawk -F'\t' -vOFS='\t' '{$2=sqrt($2); print $1,$2}' "$1"
+	self "$0" map 'sqrt($2)' "${1:--}"
 	;;
     square) #Elementwise square
-	   #<matrix>
-	svecawk -F'\t' -vOFS='\t' '{$2*=$2; print $1,$2}' "$1"
+	#<matrix>
+	self "$0" map '$2*$2' "${1:--}"
 	;;
     sum) #Sums all elements and returns a constant
 	#<vector>
@@ -114,12 +128,12 @@ case "$CMD" in
 	;;
     vecnorm) #Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	#<matrix>
-	"$0" square "${1:--}" | "$0" vecsum | "$0" sqrt
+	self "$0" square "${1:--}" | self "$0" vecsum | self "$0" sqrt
 	;;
     vecnormalize) #Normalizes vectors defined by the first N-1 dimension of MATRIX
 	#MATRIX
 	local NORMS=$(tmp) VECS=$(tmp)
-	< "${1:--}" tee >("$0" vecnorm | sed "s/\t/$US\t/" > "$NORMS") > >(sed -E "s/( [^ ]+\t)/$US\1/" > "$VECS")
+	< "${1:--}" tee >(self "$0" vecnorm | sed "s/\t/$US\t/" > "$NORMS") > >(sed -E "s/( [^ ]+\t)/$US\1/" > "$VECS")
 	join -t"$US" "$VECS" "$NORMS" | arithmetic '/' | tr -d "$US"
 	;;
     vecsum) #Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices

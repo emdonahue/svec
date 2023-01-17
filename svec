@@ -149,6 +149,6 @@ case "$CMD" in
 	;;
     *)
 	"$0" help
-	exit 1
+	[[ -z "$CMD" ]] || exit 1
 	;;
 esac

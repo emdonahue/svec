@@ -14,29 +14,30 @@ abc2='a\t2\nb\t4\nc\t6'
 abce2='a\t1\nb\t4\nc\t9'
 abcn='a\t-1\nb\t-2\nc\t-3'
 
-assert "add one" "$(./svec add <(echo $abc))" "$(echo "$abc")"
-assert "add self" "$(./svec add <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
-assert "add orthogonal dimensions"  "$(./svec add <(echo $a) <(echo $bc))" "$(echo "$abc")"
-assert "add n" "$(./svec add <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(echo "$abc2")"
-assert "analogy" "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$bc")"
+assert 'add one' "$(./svec add <(echo $abc))" "$(echo "$abc")"
+assert 'add self' "$(./svec add <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
+assert 'add orthogonal dimensions'  "$(./svec add <(echo $a) <(echo $bc))" "$(echo "$abc")"
+assert 'add n' "$(./svec add <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(echo "$abc2")"
+assert 'analogy' "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$bc")"
 assert 'cooccurrences' "$(./svec cooccurrences 2 <(echo 'a b b'))" "$(echo "a b\t2\nb b\t1")"
 assert 'counts' "$(./svec counts <(echo 'c\nc\nc\nb\na\nb'))" "$(echo "$abc")"
-assert "detriangularize" "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
-assert "dot" "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
-assert "dot orthogonal" "$(./svec dot <(echo "$a") <(echo "$bc"))" '0'
-assert "negate" "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
+assert 'detriangularize' "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
+assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
+assert 'dot orthogonal' "$(./svec dot <(echo "$a") <(echo "$bc"))" '0'
+assert 'negate' "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert 'neighbors' "$(./svec neighbors <(echo "a\t3") <(echo 'a a\t2\nb b\t2\nc a\t-2'))" "$(echo "a\t1\nc\t-1")"
-assert "norm" "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
+assert 'norm' "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
+assert 'normalize' 
 assert 'row' "$(./svec row a <(echo "a a\t1\na b\t2\nb a\t3\nb b\t4"))" "$(echo "a\t1\nb\t2")"
-assert "scale constant"  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
-assert "scale arithmetic expressions"  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
-assert "scale precision"  "$(./svec scale -g 3 '.3333333333' <(echo $a))" "$(echo "a\t0.333")"
-assert "square" "$(./svec square <(echo $abc))" "$(echo $abce2)"
-assert "sum" "$(./svec sum <(echo $abc))" '6'
-assert "vecnorm" "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
-assert "vecnormalize" "$(./svec vecnormalize <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a a\t0.5\na b\t0.5\na c\t0.5\na d\t0.5\nb a\t0.5\nb b\t0.5\nb c\t0.5\nb d\t0.5")"
-assert "vecsum" "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
-#assert "word2vec pmi=1" "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
+assert 'scale constant'  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
+assert 'scale arithmetic expressions'  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
+assert 'scale precision'  "$(./svec scale -g 3 '.3333333333' <(echo $a))" "$(echo "a\t0.333")"
+assert 'square' "$(./svec square <(echo $abc))" "$(echo $abce2)"
+assert 'sum' "$(./svec sum <(echo $abc))" '6'
+assert 'vecnorm' "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
+assert 'vecnormalize' "$(./svec vecnormalize <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a a\t0.5\na b\t0.5\na c\t0.5\na d\t0.5\nb a\t0.5\nb b\t0.5\nb c\t0.5\nb d\t0.5")"
+assert 'vecsum' "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
+#assert 'word2vec pmi=1' "$(./svec word2vec 1 <(echo a a a a))" "$(echo 'a a\t1')"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"

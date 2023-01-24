@@ -131,6 +131,10 @@ case "$CMD" in
 	#<matrix>
 	self map '$2*$2' "${1:--}"
 	;;
+    subtract) #Subtract one or more SUBTRAHEND matrices from MINUEND
+	#MINUEND SUBTRAHEND...
+	self join "$@" | arithmetic "-" | self sparse
+	;;	
     sum) #Sums all elements and returns a constant
 	#<vector>
 	svecawk '{n+=$NF} END {print n}' "$1"

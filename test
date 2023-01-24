@@ -34,6 +34,8 @@ assert 'scale constant'  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert 'scale arithmetic expressions'  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"
 assert 'scale precision'  "$(./svec scale -g 3 '.3333333333' <(echo $a))" "$(echo "a\t0.333")"
 assert 'square' "$(./svec square <(echo $abc))" "$(echo $abce2)"
+assert 'subtract' "$(./svec subtract <(echo $abc2) <(echo $abc))" "$(echo "$abc")"
+assert 'subtract multiple' "$(./svec subtract <(echo $abc2) <(echo $abc) <(echo $abc) <(echo $abc))" "$(echo "$abcn")"
 assert 'sum' "$(./svec sum <(echo $abc))" '6'
 assert 'vecnorm' "$(./svec vecnorm <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a\t4\nb\t4")"
 assert 'vecnormalize' "$(./svec vecnormalize <(echo "a a\t2\na b\t2\na c\t2\na d\t2\nb a\t2\nb b\t2\nb c\t2\nb d\t2"))" "$(echo "a a\t0.5\na b\t0.5\na c\t0.5\na d\t0.5\nb a\t0.5\nb b\t0.5\nb c\t0.5\nb d\t0.5")"

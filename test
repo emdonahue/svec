@@ -14,6 +14,7 @@ abc2='a\t2\nb\t4\nc\t6'
 abce2='a\t1\nb\t4\nc\t9'
 abcn='a\t-1\nb\t-2\nc\t-3'
 
+assert 'abs' "$(./svec abs <(echo "a\t2\nb\t-3"))" "$(echo "a\t2\nb\t3")"
 assert 'add one' "$(./svec add <(echo $abc))" "$(echo "$abc")"
 assert 'add self' "$(./svec add <(echo $abc) <(echo $abc))" "$(echo "$abc2")"
 assert 'add orthogonal dimensions'  "$(./svec add <(echo $a) <(echo $bc))" "$(echo "$abc")"
@@ -25,7 +26,7 @@ assert 'detriangularize' "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$
 assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert 'dot orthogonal' "$(./svec dot <(echo "$a") <(echo "$bc"))" '0'
 assert 'negate' "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
-assert 'neighbors' "$(./svec neighbors <(echo "a\t3") <(echo 'a a\t2\nb b\t2\nc a\t-2'))" "$(echo "a\t1\nc\t-1")"
+assert 'neighbors' "$(./svec neighbors <(echo 'a\t3') <(echo 'a a\t2\nb b\t2\nc a\t-2'))" "$(echo "a\t1\nc\t-1")"
 assert 'norm' "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert 'normalize' "$(./svec normalize <(echo 'a\t4'))" "$(echo "$a")"
 assert 'row' "$(./svec row a <(echo "a a\t1\na b\t2\nb a\t3\nb b\t4"))" "$(echo "a\t1\nb\t2")"

@@ -2,6 +2,7 @@
 
 #TODO add flags to help menu
 #TODO optimize neighbors
+#add -s sorted flag to counts to skip extra sorting step
 
 set -o errexit
 set -o pipefail
@@ -53,13 +54,13 @@ case "$CMD" in
 	#<vector> <vector> <vector>
 	self add <(self negate "$1") "$2" "$3"
 	;;
-    cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given window computed from a whitespace-separated file of tokens
-	#<window> <file>
+    cooccurrences) #Prints a 2D matrix of counts of token co-occurrence within a given WINDOW computed from a sorted, whitespace-separated stream of TOKENS
+	#WINDOW TOKENS
 	tr -s '[:space:]' '\n' < "$2" | awk -vW="$1" '$1 { for (i=1;i<=W;i++) { if(c[i]) print (c[i]<$0) ? c[i] FS $0 : $0 FS c[i]; c[i]=c[i+1] }; c[W]=$0; }' | self counts
 	;;
     counts) #Prints a vector of counts from a newline-separated stream of tokens
 	#<file>
-	sort "${1:--}" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
+	uniq -c "${1:--}" | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
     dot) #Dot product of multiple vectors
 	#[<vector>]
@@ -78,12 +79,12 @@ case "$CMD" in
     join) #Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors. 
 	#<vector> [<vector>]
 	if [[ $# -le 1 ]]; then
-	    cat "$1"
+	    cat "${1:--}"
 	elif [[ $# -eq 2 ]]; then
 	    #-e requires -o, which means we must know the number of columns, so we must convert to a different schema
-	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed "s/\t/$US/1" "$1") <(sed "s/\t/$US/1" "$2") | tr $US '\t'
+	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed "s/\t/$US/1" "${1:--}") <(sed "s/\t/$US/1" "$2") | tr $US '\t'
 	else
-	    self join "$1" "$2" | {shift 2; self join - "$@"}
+	    self join "${1:--}" "$2" | {shift 2; self join - "$@"}
 	fi
 	;;
     map) #Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
@@ -114,6 +115,11 @@ case "$CMD" in
     row) #Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
 	#DIMENSION MATRIX
 	grep -E "^$1 " "${2:--}" | sed -E 's/^[^ ]+ (.*)/\1/'
+	;;
+    pmi) #Compute the pointwise mutual information of sorted, line-separated pairs of whitespace-separated tokens
+	#BIGRAMS
+	
+	
 	;;
     scale) #Scale all elements by a constant
 	#<constant> <vector>

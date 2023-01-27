@@ -10,7 +10,7 @@ if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
 local SCRIPT="$0"
 
-zparseopts -A opts -E -D g:
+zparseopts -A opts -E -D g: l:
 local PRECISION=${opts[-g]:-17} #Sets the decimal precision of numeric calculations.
 export LC_COLLATE=${opts[-l]:-C} #Selects the locale for determining sort order of dimensions.
 

@@ -1,5 +1,5 @@
 # svec
-Streaming computations over sparse vectors and matrices for use in text mining and NLP using standard unix tools
+Streaming computations over sparse vectors and matrices for use in text mining and NLP
 
 svec contains a collection of subcommands that operate on a common format for sparse vectors and matrices. Each vector or matrix is a text file each line of which contains space-separated alpha-numeric labels for the dimensions, followed by a tab, followed by the numeric value of that particular cell in the vector or matrix. Canonically, files are sorted by dimension. For instance, the 2x2 matrix with dimensions a and b would have the following representation:
 
@@ -14,33 +14,40 @@ The subcommands all operate on this common format, and emphasize streaming and d
 
 ## Documentation
 ```
-usage: svec <subcommand> [arguments] (All subcommands respect the -g flag to specify the decimal precision of arithmetic)
-	abs - Element-wise absolute value
-	add - Element-wise sum of 2 or more vectors
-	analogy - Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
-	cooccurrences - Prints a 2D matrix of counts of token co-occurrence within a given WINDOW computed from a sorted, whitespace-separated stream of TOKENS
-	counts - Prints a vector of counts from a newline-separated stream of tokens
-	dot - Dot product of multiple vectors
-	detriangularize - Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
-	--help|-h|help - Print the list of subcommands or help information for a specific subcommand (e.g. "svec help dot")
-	join - Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors. 
-	map - Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
-	negate - Negates a vector
-	neighbors - Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
-	#join <(self vecnormalize "${2:--}") <(self normalize "$1" - | sort -k2,2 #| svecawk 'NR==1 {d=$2} d==$2 {s+=$3*$4} d!=$2 {print $2,s; s=0; d=$2}'
-	usage:  join <(self vecnormalize "${2:--}") <(self normalize "$1" - | sort -k2,2 #| svecawk 'NR==1 {d=$2} d==$2 {s+=$3*$4} d!=$2 {print $2,s; s=0; d=$2}'
-	norm - Computes the Euclidean norm of a vector, or an entry-wise Euclidean norm of a matrix
-	normalize - Normalizes VECTOR using the Euclidean norm.
-	row - Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
-	pmi - Compute the pointwise mutual information of line-separated pairs of whitespace-separated tokens
-	scale - Scale all elements by a constant
-	sparse - Removes 0 valued dimensions to create sparse vector or matrix
-	sqrt - Elementwise square root
-	square - Elementwise square
-	subtract - Subtract one or more SUBTRAHEND matrices from MINUEND
-	sum - Sums all elements and returns a constant
-	vecnorm - Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
-	vecnormalize - Normalizes vectors defined by the first N-1 dimension of MATRIX
-	vecsum - Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
-	word2vec - Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
+svec - Streaming computations over sparse vectors and matrices for use in text mining and NLP
+Usage: svec SUBCOMMAND [ARGUMENTS...]
+
+General Options:
+	-g	Specifies decimal precision of arithmetic
+
+Subcommands:
+	--help|-h|help [SUBCOMMAND]	Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
+	abs MATRIX	Element-wise absolute value
+	add MATRIX [MATRIX...]	Element-wise sum of 2 or more matrices
+	analogy VECTOR VECTOR VECTOR	Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
+	cooccurrences WINDOW [TOKENS]	Prints a 2D matrix of counts of token co-occurrence within a given WINDOW computed from a sorted, whitespace-separated stream of TOKENS
+	counts TOKENS	Prints a vector of counts from a newline-separated stream of tokens
+	dot MATRIX [MATRIX...]	Dot product of multiple vectors
+	detriangularize MATRIX	Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
+	join MATRIX [MATRIX...]	Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors. 
+	map EXPRESSION MATRIX	Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
+	negate MATRIX	Negates a vector
+	neighbors VECTOR 2D-MATRIX	Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
+	norm MATRIX	Computes the entry-wise Euclidean norm of a matrix
+	normalize VECTOR	Normalizes VECTOR using the Euclidean norm.
+	row DIMENSION MATRIX	Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
+	pmi BIGRAMS	Compute the pointwise mutual information of line-separated pairs of whitespace-separated tokens
+	scale CONSTANT MATRIX	Scale all elements by a constant
+	sparse MATRIX	Removes 0 valued dimensions to create sparse vector or matrix
+	sqrt MATRIX	Elementwise square root
+	square MATRIX	Elementwise square
+	subtract MINUEND SUBTRAHEND...	Subtract one or more SUBTRAHEND matrices from MINUEND
+	sum MATRIX	Sums all elements and returns a constant
+	vecnorm MATRIX	Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
+	vecnormalize MATRIX	Normalizes vectors defined by the first N-1 dimension of MATRIX
+	vecsum MATRIX	Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
+	word2vec WINDOW [TOKENS]	Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 ```
+## TODO
+- add flags to help menu
+- optimize neighbors

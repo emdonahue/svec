@@ -34,8 +34,8 @@ self() { #Recursively call called script with called arguments
 }
 
 tmp() {
-    local TMPFILE=$(mktemp --suffix=.svec)
-    trap "rm -f $TMPFILE" EXIT
+    local TMPFILE=$(mktemp --suffix=.svec "$@")
+    trap "rm -rf $TMPFILE" EXIT
     echo "$TMPFILE"
 }
 
@@ -86,9 +86,9 @@ case "$CMD" in
 	fi
 	;;
 
-    julia) #MATRIX; Opens an interactive Julia prompt on MATRIX loaded as an NDSparse.
-
-	julia -ie 'using JuliaDB; svec=['${(j:,:)${:-"loadndsparse(\"${^@}\",indexcols=[1],spacedelim=true,header_exists=false)"}}']'
+    julia) #MATRIX...; Opens an interactive Julia prompt on MATRIX loaded as an IndexedTable. Creates an array, "svec," which contains the IndexedTable objects in the same order as the arguments supplied.
+	zparseopts -F -D v:=VARNAMES ${c#VARNAME[,VARNAME...]; Accepts a comma-separated list of variable names and assigns NDSparse objects from "svec" to each variable in order.}
+	julia -ie 'using JuliaDB; svec=['${(j:,:)${:-"loadtable(\"${^@}\",indexcols=[],spacedelim=true,header_exists=false,output=\"$(tmp -d)\")"}}']' -e ${VARNAMES[2]:+"${VARNAMES[2]},=svec"}
 	;;
     
     map) #EXPRESSION MATRIX; Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.

@@ -1,6 +1,5 @@
 #!/bin/zsh
 
-#TODO add flags to help menu
 #TODO optimize neighbors
 #add -s sorted flag to counts to add extra sorting step. maybe should be global
 
@@ -13,7 +12,7 @@ local SCRIPT="$0"
 zparseopts -A opts -E -D g:
 local PRECISION=${opts[-g]:-17} #Sets the decimal precision of numeric calculations.
 
-export LC_COLLATE="${LC_COLLATE:-C}" #Selects the locale for determining sort order of dimensions.
+export LC_COLLATE=C #Selects the locale for determining sort order of dimensions.
 
 local US=$'\037'
 
@@ -85,6 +84,11 @@ case "$CMD" in
 	else
 	    self join "${1:--}" "$2" | {shift 2; self join - "$@"}
 	fi
+	;;
+
+    julia) #MATRIX; Opens an interactive Julia prompt on MATRIX loaded as an NDSparse.
+
+	julia -ie 'using JuliaDB; svec=['${(j:,:)${:-"loadndsparse(\"${^@}\",indexcols=[1],spacedelim=true,header_exists=false)"}}']'
 	;;
     
     map) #EXPRESSION MATRIX; Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.

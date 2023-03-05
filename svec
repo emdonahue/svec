@@ -10,7 +10,7 @@ if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 local SCRIPT="$0"
 
 zparseopts -A opts -E -D g:
-local PRECISION=${opts[-g]:-17} #Sets the decimal precision of numeric calculations.
+local PRECISION=${opts[-g]:-17} #Sets the decimal precision of numeric calculations. Defaults to 17, which is recommended by gawk docs for floating point.
 
 export LC_COLLATE=C #Selects the locale for determining sort order of dimensions.
 
@@ -78,11 +78,8 @@ case "$CMD" in
     join) #MATRIX [MATRIX...]; Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors. 
 	if [[ $# -le 1 ]]; then
 	    cat "${1:--}"
-	elif [[ $# -eq 2 ]]; then
-	    #-e requires -o, which means we must know the number of columns, so we must convert to a different schema
-	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed "s/\t/$US/1" "${1:--}") <(sed "s/\t/$US/1" "$2") | tr $US '\t'
 	else
-	    self join "${1:--}" "$2" | {shift 2; self join - "$@"}
+	    join -a1 -a2 -e0 -o 0,1.2,2.2 -t$US <(sed "s/\t/$US/1" "$1") <(sed "s/\t/$US/1" "$2") | tr $US '\t' | {shift 2; self join - "$@"}
 	fi
 	;;
 

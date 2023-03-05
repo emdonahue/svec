@@ -80,7 +80,7 @@ case "$CMD" in
 	if [[ $# -le 1 ]]; then
 	    cat "${1:--}"
 	else
-	    join $JOINOPTS -o 0,1.2,2.2 -t$US <(sed "s/\t/$US/1" "$1") <(sed "s/\t/$US/1" "$2") | tr $US '\t' | {shift 2; self join $JOINOPTS -- - "$@"}
+	    join $JOINOPTS -oauto -t'	' "$1" "$2" | {shift 2; self join $JOINOPTS -- - "$@"}
 	fi
 	;;
 

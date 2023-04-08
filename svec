@@ -1,11 +1,13 @@
 #!/bin/zsh
 
 #TODO optimize neighbors
-#add -s sorted flag to counts to add extra sorting step. maybe should be global
+#TODO add -s sorted flag to counts to add extra sorting step. maybe should be global
 
 set -o errexit
 set -o pipefail
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
+
+unset c #Reserved inline comment variable
 
 local SCRIPT="$0"
 
@@ -57,10 +59,6 @@ case "$CMD" in
     
     analogy) #VECTOR VECTOR VECTOR; Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	self add <(self negate "$1") "$2" "$3"
-	;;
-
-    cooccurrences) #WINDOW [TOKENS]; Prints a 2D matrix of counts of token co-occurrence within a given WINDOW computed from a sorted, whitespace-separated stream of TOKENS
-	awk -vW="$1" -v'RS=[[:space:][:cntrl:]]+' '$1 { for (i=1;i<=W;i++) { if(c[i]) print (c[i]<$0) ? c[i] FS $0 : $0 FS c[i]; c[i]=c[i+1] }; c[W]=$0; }' "${2:--}" | self counts
 	;;
 
     counts) #TOKENS; Prints a vector of counts from a newline-separated stream of tokens

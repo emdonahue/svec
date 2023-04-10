@@ -109,11 +109,11 @@ case "$CMD" in
 
     normalize) #VECTOR; Normalizes VECTOR using the Euclidean norm.
 	local VEC=$(tmp)
-	local NORM=$(<"${1:--}" tee "$VEC" | self norm)
+	local NORM=$(<"${1:-/dev/stdin}" tee "$VEC" | self norm)
 	self map "\$2/$NORM" "$VEC"
 	;;
 
-    row) #DIMENSION MATRIX; Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing that dimension.
+    row) #DIMENSION MATRIX; Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing the leftmost dimension.
 	grep -E "^$1 " "${2:--}" | sed -E 's/^[^ ]+ (.*)/\1/'
 	;;
 
@@ -153,7 +153,7 @@ case "$CMD" in
 
     vecnormalize) #MATRIX; Normalizes vectors defined by the first N-1 dimension of MATRIX
 	local NORMS=$(tmp) VECS=$(tmp)
-	< "${1:--}" tee >(self vecnorm | sed "s/\t/$US\t/" > "$NORMS") > >(sed -E "s/( [^ ]+\t)/$US\1/" > "$VECS")
+	< "${1:-/dev/stdin}" tee >(self vecnorm | sed "s/\t/$US\t/" > "$NORMS") > >(sed -E "s/( [^ ]+\t)/$US\1/" > "$VECS")
 	join -t"$US" "$VECS" "$NORMS" | arithmetic '/' | tr -d "$US"
 	;;
 

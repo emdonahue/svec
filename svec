@@ -41,6 +41,23 @@ tmp() {
     echo "$TMPFILE"
 }
 
+cache() {
+    if [[ -f "$1" || "$1" -eq '-' ]]; then
+	echo "$1"
+    else
+	local TMPFILE=$(tmp)
+	cat > "$TMPFILE"
+	echo "$TMPFILE"
+    fi
+}
+
+cachein() {
+    [[ -f "$1" ]] && cat "$1" || tee <"${1:-/dev/stdin}" "$2"}
+
+cacheout() {
+    [[ -f "$1" ]] && echo "$1" || echo "$2"
+}
+
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
@@ -109,8 +126,8 @@ case "$CMD" in
 
     normalize) #VECTOR; Normalizes VECTOR using the Euclidean norm.
 	local VEC=$(tmp)
-	local NORM=$(<"${1:-/dev/stdin}" tee "$VEC" | self norm)
-	self map "\$2/$NORM" "$VEC"
+	local NORM=$(cachein "$1" "$VEC" | self norm)
+	self map "\$2/$NORM" $(cacheout "$1" "$VEC")
 	;;
 
     row) #DIMENSION MATRIX; Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing the leftmost dimension.

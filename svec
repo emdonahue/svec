@@ -52,16 +52,17 @@ cache() {
     fi
 }
 
-#cachein() {
-#    [[ -f "$1" ]] && cat "$1" || tee <"${1:-/dev/stdin}" "$2"}
-
 cachein() {
+    [[ -f "$1" ]] && cat "$1" || tee <"${1:-/dev/stdin}" "$2"}
+
+cachein2() {
     if [[ -f "$1" ]]; then
 	typeset -g $2="$1"
 	cat "$1"
     else
 	typeset -g $2="$(tmp)"
-	tee <"${1:-/dev/stdin}" \$"$2"
+	echo ${(P)2} >&2
+	tee <"${1:-/dev/stdin}" "${(P)2}"
     fi
 }
 
@@ -136,12 +137,9 @@ case "$CMD" in
 	;;
 
     normalize) #VECTOR; Normalizes VECTOR using the Euclidean norm.
-	#local VEC=$(tmp)
-	local VEC
-	local NORM=$(cachein "$1" VEC | self norm)
-	#local NORM=$(cachein "$1" "$VEC" | self norm)
-	#self map "\$2/$NORM" $(cacheout "$1" "$VEC")
-	self map "\$2/$NORM" "$VEC"
+	local VEC=$(tmp)
+	local NORM=$(cachein "$1" "$VEC" | self norm)
+	self map "\$2/$NORM" $(cacheout "$1" "$VEC")
 	;;
 
     row) #DIMENSION MATRIX; Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing the leftmost dimension.

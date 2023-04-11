@@ -2,6 +2,7 @@
 
 #TODO optimize neighbors
 #TODO add -s sorted flag to counts to add extra sorting step. maybe should be global
+#TODO extend caching to all subcommands
 
 set -o errexit
 set -o pipefail
@@ -126,8 +127,11 @@ case "$CMD" in
 
     normalize) #VECTOR; Normalizes VECTOR using the Euclidean norm.
 	local VEC=$(tmp)
+	#local VEC
+	#local NORM=$(cachein "$1" VEC | self norm)
 	local NORM=$(cachein "$1" "$VEC" | self norm)
 	self map "\$2/$NORM" $(cacheout "$1" "$VEC")
+	#self map "\$2/$NORM" "$VEC"
 	;;
 
     row) #DIMENSION MATRIX; Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing the leftmost dimension.
@@ -136,6 +140,7 @@ case "$CMD" in
 
     pmi) #BIGRAMS; Compute the pointwise mutual information of line-separated pairs of whitespace-separated tokens
 	local BIGRAMS=$(tmp) UNIGRAMS=$(tmp)
+	#local BCOUNT=$(cachein "$1" "$BIGRAMS" | 
 	local BCOUNT=$(sort "${1:--}" | awk -vB="$SCRIPT ${(kv)opts} counts > $BIGRAMS" -vU="$SCRIPT ${(kv)opts} counts > $UNIGRAMS" "{print \$0 | B; print \$1 | U} END {print NR}")	
 	join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2 | join -12 -o 1.1,0,1.3,1.4,2.2 - "$UNIGRAMS" | sort -k1,2 | svecawk -vD="$BCOUNT" '{print $1,$2 "\t" (log($3) + log(D) - log($4) - log($5))}'	#log((#(w,c)*|D|) / (#(w)*#(c)))
 	;;

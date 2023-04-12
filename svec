@@ -98,8 +98,14 @@ case "$CMD" in
 	self join "$@" | arithmetic '*' | self sum
 	;;
 
-    detriangularize) #MATRIX; Computes a dense 2D matrix from a triangular matrix by copying values across the diagonal
-	svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | sort
+    triangular) #MATRIX; Converts between triangular and square 2D matrices by copying/dropping across the diagonal.
+	zparseopts -F -D d=SQUARE ${c#; De-triangularize the matrix into a dense square.}\
+		   u=UNSORTED ${c#; Do not sort the results into normalized svec format. Faster if you only need counts, not joins.}
+	if [[ $SQUARE ]]; then
+	    svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | if [[ $UNSORTED ]]; then cat; else sort; fi
+	else
+	    svecawk '$1<=$2' "$1"
+	fi
 	;;
 
     join) #MATRIX [MATRIX...]; Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.
@@ -146,11 +152,14 @@ case "$CMD" in
 	grep -E "^$1 " "${2:--}" | sed -E 's/^[^ ]+ (.*)/\1/'
 	;;
 
-    pmi) #BIGRAMS; Compute the pointwise mutual information of line-separated pairs of whitespace-separated tokens
+    pmi) #BIGRAMCOUNTS; Compute the pointwise mutual information of the detriangularized BIGRAMCOUNTS.
 	local BIGRAMS=$(tmp) UNIGRAMS=$(tmp)
-	#local BCOUNT=$(cachein "$1" "$BIGRAMS" | 
-	local BCOUNT=$(sort "${1:--}" | awk -vB="$SCRIPT ${(kv)opts} counts > $BIGRAMS" -vU="$SCRIPT ${(kv)opts} counts > $UNIGRAMS" "{print \$0 | B; print \$1 | U} END {print NR}")	
-	join "$BIGRAMS" "$UNIGRAMS" | sort -k2,2 | join -12 -o 1.1,0,1.3,1.4,2.2 - "$UNIGRAMS" | sort -k1,2 | svecawk -vD="$BCOUNT" '{print $1,$2 "\t" (log($3) + log(D) - log($4) - log($5))}'	#log((#(w,c)*|D|) / (#(w)*#(c)))
+	local BCOUNT=$(cachein "$1" "$BIGRAMS" | tee >(self vecsum > "$UNIGRAMS") | self sum)
+	cat $UNIGRAMS
+	echo $BCOUNT
+	#exit
+	#local BCOUNT=$(sort "${1:--}" | awk -vB="$SCRIPT ${(kv)opts} counts > $BIGRAMS" -vU="$SCRIPT ${(kv)opts} counts > $UNIGRAMS" "{print \$0 | B; print \$1 | U} END {print NR}")	
+	join "$(cacheout "$1" "$BIGRAMS")" "$UNIGRAMS" | sort -k2,2 | join -12 -o 1.1,0,1.3,1.4,2.2 - "$UNIGRAMS" | sort -k1,2 | svecawk -vD="$BCOUNT" '{print $1,$2 "\t" (log($3) + log(D) - log($4) - log($5))}'	#log((#(w,c)*|D|) / (#(w)*#(c)))
 	;;
 
     scale) #CONSTANT MATRIX; Scale all elements by a constant

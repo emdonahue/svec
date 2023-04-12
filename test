@@ -21,7 +21,9 @@ assert 'add orthogonal dimensions'  "$(./svec add <(echo $a) <(echo $bc))" "$(ec
 assert 'add n' "$(./svec add <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(echo "$abc2")"
 assert 'analogy' "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$bc")"
 assert 'counts' "$(./svec counts <(echo 'c\nc\nc\nb\na\nb'))" "$(echo "$abc")"
-assert 'detriangularize' "$(./svec detriangularize <(echo "a a\t1\na b\t2"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
+assert 'triangularize' "$(./svec triangular <(echo "a a\t1\na b\t2\nb a\t2"))" "$(echo "a a\t1\na b\t2")"
+assert 'detriangularize' "$(./svec triangular -d <(echo "a b\t2\na a\t1"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
+assert 'detriangularize unsorted' "$(./svec triangular -du <(echo "a b\t2\na a\t1"))" "$(echo "a b\t2\nb a\t2\na a\t1")"
 assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert 'dot orthogonal' "$(./svec dot <(echo "$a") <(echo "$bc"))" ''
 assert 'negate' "$(./svec negate <(echo $abc))" "$(echo "$abcn")"

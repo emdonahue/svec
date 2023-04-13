@@ -152,8 +152,8 @@ case "$CMD" in
 	grep -E "^$1 " "${2:--}" | sed -E 's/^[^ ]+ (.*)/\1/'
 	;;
 
-    pmi) #BIGRAMCOUNTS; Compute the pointwise mutual information of the BIGRAMCOUNTS. If the bigrams are unordered, the matrix must be symmetric/detriangularized.
-	zparseopts -F -D u=UNORDERED ${c#; Unordered - Assume the bigrams are in normalized order (the matrix is symmetric) and only count them once per pair.}
+    pmi) #BIGRAMCOUNTS; Compute the pointwise mutual information of the BIGRAMCOUNTS as produced by running count on a bigram stream.
+	zparseopts -F -D u=UNORDERED ${c#; Unordered bigrams - Assumes the bigrams are in normalized order and the matrix is symmetric, so only count them once per pair.}
 	local BIGRAMS=$(tmp) UNIGRAMS=$(tmp)
 	local BCOUNT=$(cachein "$1" "$BIGRAMS" | tee >(self vecsum > "$UNIGRAMS") | if [[ $UNORDERED ]]; then self triangular; else cat; fi | self sum)
 	join "$(cacheout "$1" "$BIGRAMS")" "$UNIGRAMS" | sort -k2,2 | join -12 -o 1.1,0,1.3,1.4,2.2 - "$UNIGRAMS" | sort -k1,2 | svecawk -vD="$BCOUNT" '{print $1,$2 "\t" (log($3) + log(D) - log($4) - log($5))}'	#log((#(w,c)*|D|) / (#(w)*#(c)))

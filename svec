@@ -98,16 +98,6 @@ case "$CMD" in
 	self join "$@" | arithmetic '*' | self sum
 	;;
 
-    triangular) #MATRIX; Converts between triangular and square 2D matrices by copying/dropping across the diagonal.
-	zparseopts -F -D d=SQUARE ${c#; De-triangularize the matrix into a dense square.}\
-		   u=UNSORTED ${c#; Do not sort the results into normalized svec format. Faster if you only need counts, not joins.}
-	if [[ $SQUARE ]]; then
-	    svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | if [[ $UNSORTED ]]; then cat; else sort; fi
-	else
-	    svecawk '$1<=$2' "$1"
-	fi
-	;;
-
     join) #MATRIX [MATRIX...]; Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.
 	zparseopts -aJOINOPTS -F -D a+:- e:
 	if [[ $# -le 1 ]]; then
@@ -126,6 +116,14 @@ case "$CMD" in
 	tsvecawk '{$2='"$1"'; print $1,$2}' "${2:--}"
 	;;
 
+    minmax) #; Filters values to be within the specified minimum and/or maximum.
+	zparseopts -F -D m:=MIN ${c#MINIMUM; Discard values <= MINIMUM}\
+		   M:=MIN ${c#MINIMUM; Discard values < MINIMUM}\
+		   x:=MAX ${c#MINIMUM; Discard values >= MAXIMUM}\
+		   X:=MAX ${c#MINIMUM; Discard values > MAXIMUM}
+	tsvecawk -vMIN="$MIN[2]" -vMAX="$MAX[2]" 'MIN<=$2 && $2<=MAX' "$1"
+	;;
+    
     negate) #MATRIX; Negates a vector
 	#<vector>
 	self scale -1 "$1"
@@ -181,6 +179,16 @@ case "$CMD" in
 	
     sum) #MATRIX; Sums all elements and returns a constant
 	svecawk '{n+=$NF} END {print n}' "$1"
+	;;
+
+    triangular) #MATRIX; Converts between triangular and square 2D matrices by copying/dropping across the diagonal.
+	zparseopts -F -D d=SQUARE ${c#; De-triangularize the matrix into a dense square.}\
+		   u=UNSORTED ${c#; Do not sort the results into normalized svec format. Faster if you only need counts, not joins.}
+	if [[ $SQUARE ]]; then
+	    svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | if [[ $UNSORTED ]]; then cat; else sort; fi
+	else
+	    svecawk '$1<=$2' "$1"
+	fi
 	;;
 
     vecnorm) #MATRIX; Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices

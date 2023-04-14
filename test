@@ -10,6 +10,7 @@ assert() {
 a='a\t1'
 bc='b\t2\nc\t3'
 abc="$a\n$bc"
+abcde="$abc\nd\t4\ne\t5"
 abc2='a\t2\nb\t4\nc\t6'
 abce2='a\t1\nb\t4\nc\t9'
 abcn='a\t-1\nb\t-2\nc\t-3'
@@ -26,6 +27,7 @@ assert 'detriangularize' "$(./svec triangular -d <(echo "a b\t2\na a\t1"))" "$(e
 assert 'detriangularize unsorted' "$(./svec triangular -du <(echo "a b\t2\na a\t1"))" "$(echo "a b\t2\nb a\t2\na a\t1")"
 assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert 'dot orthogonal' "$(./svec dot <(echo "$a") <(echo "$bc"))" ''
+assert 'minmax min and max' "$(./svec minmax -m 2 -x 4 <(echo "$abcde"))" "$(echo "${bc}\nd\t4")"
 assert 'negate' "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert 'neighbors' "$(./svec neighbors <(echo 'a\t3') <(echo 'a a\t2\nb b\t2\nc a\t-2'))" "$(echo "a\t1\nc\t-1")"
 assert 'norm' "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'

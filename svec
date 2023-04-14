@@ -121,7 +121,7 @@ case "$CMD" in
 		   M:=MIN ${c#MINIMUM; Discard values < MINIMUM}\
 		   x:=MAX ${c#MINIMUM; Discard values >= MAXIMUM}\
 		   X:=MAX ${c#MINIMUM; Discard values > MAXIMUM}
-	tsvecawk -vMIN="$MIN[2]" -vMAX="$MAX[2]" 'MIN<=$2 && $2<=MAX' "$1"
+	tsvecawk "${${MIN[2]:+$MIN[2]<${${MIN[1]:/-m/=}:/-M/}\$2}:-1} && ${${MAX[2]:+\$2<${${MAX[1]:/-x/=}:/-X/}$MAX[2]}:-1}" "$1"
 	;;
     
     negate) #MATRIX; Negates a vector

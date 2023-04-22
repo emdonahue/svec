@@ -27,10 +27,10 @@ Subcommands:
 	analogy VECTOR VECTOR VECTOR	Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
 	counts TOKENS	Prints a vector of counts from a newline-separated stream of tokens
 	dot MATRIX [MATRIX...]	Dot product of multiple vectors
-	triangular MATRIX	Converts between triangular and square 2D matrices by copying/dropping across the diagonal.
 	join MATRIX [MATRIX...]	Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.
 	julia MATRIX...	Opens an interactive Julia prompt on MATRIX loaded as an IndexedTable. Creates an array, "svec," which contains the IndexedTable objects in the same order as the arguments supplied.
 	map EXPRESSION MATRIX	Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
+	minmax 	Filters values to be within the specified minimum and/or maximum.
 	negate MATRIX	Negates a vector
 	neighbors VECTOR 2D-MATRIX	Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	norm MATRIX	Computes the entry-wise Euclidean norm of a matrix
@@ -43,6 +43,7 @@ Subcommands:
 	square MATRIX	Elementwise square
 	subtract MINUEND SUBTRAHEND...	Subtract one or more SUBTRAHEND matrices from MINUEND
 	sum MATRIX	Sums all elements and returns a constant
+	triangular MATRIX	Converts between triangular and square 2D matrices by copying/dropping across the diagonal.
 	vecnorm MATRIX	Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	vecnormalize MATRIX	Normalizes vectors defined by the first N-1 dimension of MATRIX
 	vecsum MATRIX	Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices

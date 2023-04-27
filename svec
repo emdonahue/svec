@@ -42,20 +42,20 @@ tmp() {
     echo "$TMPFILE"
 }
 
-cache() {
-    if [[ -f "$1" || "$1" -eq '-' ]]; then
+cache() { #Return $1 if $1 is a file, or else write it to a temp file and return that
+    if [[ -f "$1" ]]; then
 	echo "$1"
     else
 	local TMPFILE=$(tmp)
-	cat > "$TMPFILE"
+	cat $1 > "$TMPFILE"
 	echo "$TMPFILE"
     fi
 }
 
-cachein() {
+cachein() { #STREAM TMP; Write STREAM to TMP if it is not already a file and write it to stdout. Used to cache transient data unless already backed by a file.
     [[ -f "$1" ]] && cat "$1" || tee <"${1:-/dev/stdin}" "$2"}
 
-cachein2() {
+cachein2() { #Attempt to bind variable names directly in calling scope, but fails in subshells
     if [[ -f "$1" ]]; then
 	typeset -g $2="$1"
 	cat "$1"
@@ -66,7 +66,7 @@ cachein2() {
     fi
 }
 
-cacheout() {
+cacheout() { #STREAM TMP; Echo STREAM if it is a file, otherwise TMP. Used to identify the actual file created by cachein.
     [[ -f "$1" ]] && echo "$1" || echo "$2"
 }
 
@@ -86,10 +86,17 @@ case "$CMD" in
 	self join -a1 -a2 "$@" | arithmetic "+" | self sparse
 	;;
     
-    analogy) #VECTOR VECTOR VECTOR; Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
+    analogy) #VECTOR VECTOR VECTOR; Computes the analogy vector from 3 word2vec embeddings man:king::woman:queen => king-man+woman=queen
 	self add <(self negate "$1") "$2" "$3"
 	;;
 
+    analogicalinfluence) #VECTOR VECTOR VECTOR VECTOR; Given the analogy man:king::woman:queen, computes how much each dimension of the imputed gender relationship vector woman-man contributes to the empirical relationship vector queen-king. Specifically, |q-k| - |(q-k) – (w-m)|, or the distance between the empirical relationship and the error introduced by the approximation, which measures which dimensions cover the most distance in the correct direction, discounted as high error makes them miss their mark. High positive values contribute more, low negatives less.
+	#|q-k| - |(q-k) – (w-m)|
+	(){ #(q-k) (w-m)
+	    self subtract "$1" "$2" | self abs | self subtract <(self abs "$1") -
+	} $(self subtract "$4" "$2" | cache) <(self subtract "$3" "$1")
+	;;
+    
     counts) #TOKENS; Prints a vector of counts from a newline-separated stream of tokens
 	sort "${1:--}" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
@@ -130,7 +137,8 @@ case "$CMD" in
 	;;
 
     neighbors) #VECTOR 2D-MATRIX; Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
-	svecawk '1==ARGIND {vec[$1]=$2; norm+=$2*$2} 1<ARGIND && !neighbor {norm=sqrt(norm); for (i in vec) vec[i]/=norm} 1<ARGIND {n=$1} 1<ARGIND && neighbor!=n {print_neighbor(); neighbor=n; norm=0; dot=0} neighbor {dot+=$3*vec[$2]; norm+=$3*$3} END {print_neighbor()} function print_neighbor() { if (neighbor && dot && norm) print neighbor"\t"(dot/sqrt(norm)) }' "$1" "$2" 
+	svecawk '1==ARGIND {vec[$1]=$2; norm+=$2*$2} 1<ARGIND && !neighbor {norm=sqrt(norm); for (i in vec) vec[i]/=norm} 1<ARGIND {n=$1} 1<ARGIND && neighbor!=n {print_neighbor(); neighbor=n; norm=0; dot=0} neighbor {dot+=$3*vec[$2]; norm+=$3*$3} END {print_neighbor()} function print_neighbor() { if (neighbor && dot && norm) print neighbor"\t"(dot/sqrt(norm))}' "$1" "$2"
+	#slower but lower memory footprint #join -12 -o 1.1,0,1.3,2.2 <(self vecnormalize "${2:--}" | sort -k2,2) <(self normalize "$1") | sed -E 's/ ([^ ]+) ([^ ]+)$/\t\1\t\2/' | arithmetic '*' | sort -k1,1 | self vecsum
 	;;
 
     norm) #MATRIX; Computes the entry-wise Euclidean norm of a matrix

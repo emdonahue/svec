@@ -3,6 +3,7 @@
 #TODO optimize neighbors
 #TODO add -s sorted flag to counts to add extra sorting step. maybe should be global
 #TODO extend caching to all subcommands
+#TODO join behaves incorrectly when presented with the zero vector (a completely empty file) using auto. recursively pass number of files processed and manually compute join output
 
 set -o errexit
 set -o pipefail

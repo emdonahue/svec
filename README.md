@@ -24,7 +24,8 @@ Subcommands:
 	--help|-h|help [SUBCOMMAND]	Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	abs MATRIX	Element-wise absolute value
 	add MATRIX [MATRIX...]	Element-wise sum of 2 or more matrices
-	analogy VECTOR VECTOR VECTOR	Computes the analogy vector from 3 word2vec embeddings king:man::queen:woman => -king+man+queen=woman
+	analogy VECTOR VECTOR VECTOR	Computes the analogy vector from 3 word2vec embeddings man:king::woman:queen => king-man+woman=queen
+	analogicalinfluence VECTOR VECTOR VECTOR VECTOR	Given the analogy man:king::woman:queen, computes how much each dimension of the imputed gender relationship vector woman-man contributes to the empirical relationship vector queen-king. Specifically, |q-k| - |(q-k) – (w-m)|, or the distance between the empirical relationship and the error introduced by the approximation, which measures which dimensions cover the most distance in the correct direction, discounted as high error makes them miss their mark. High positive values contribute more, low negatives less.
 	counts TOKENS	Prints a vector of counts from a newline-separated stream of tokens
 	dot MATRIX [MATRIX...]	Dot product of multiple vectors
 	join MATRIX [MATRIX...]	Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.
@@ -53,3 +54,4 @@ Subcommands:
 - optimize neighbors
 - add -s sorted flag to counts to add extra sorting step. maybe should be global
 - extend caching to all subcommands
+- join behaves incorrectly when presented with the zero vector (a completely empty file) using auto. recursively pass number of files processed and manually compute join output

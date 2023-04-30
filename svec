@@ -92,14 +92,8 @@ case "$CMD" in
 	;;
 
     analogicalinfluence) #VECTOR VECTOR VECTOR VECTOR; Given the analogy man:king::woman:queen, computes how much each dimension of the imputed gender relationship vector woman-man contributes to the empirical relationship vector queen-king. Specifically, |q-k| - |(q-k) – (w-m)|, or the distance between the empirical relationship and the error introduced by the approximation, which measures which dimensions cover the most distance in the correct direction, discounted as high error makes them miss their mark. High positive values contribute more, low negatives less.
-	#|q-k| - |(q-k) – (w-m)|
-	#(){ #(q-k) (w-m)
-	#    return
-	#    self subtract "$1" "$2" | self abs | self subtract <(self abs "$1") -
-	#} $(self subtract "$4" "$2" | cache) <(self subtract "$3" "$1")
-	#11-0 - (11 - 10)
-	#1:dimension 2:m 3:k 4:w 5:q
-	self join -a1 -a2 -e0 "$@" | tsvecawk '{truedist=$5-$3; error=truedist-($4-$2); print $1,abs(truedist)-abs(error)} function abs(x) {return x<0 ? -x : x}'
+	#1:dim 2:m 3:k 4:w 5:q
+	self join -a1 -a2 -e0 "$@" | tsvecawk 'BEGIN {print "dimension","|q-k|-|(q-k)–(w-m)|","|q-k|-|(q-k)–w|","|q-k|-|(q-k)+m|","|q-k|"} {truedist=$5-$3; error=truedist-($4-$2); print $1,abs(truedist)-abs(error),abs(truedist)-abs(truedist-$4),abs(truedist)-abs(truedist+$2),abs(truedist)} function abs(x) {return x<0 ? -x : x}'
 	;;
     
     counts) #TOKENS; Prints a vector of counts from a newline-separated stream of tokens

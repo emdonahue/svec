@@ -28,6 +28,7 @@ assert 'detriangularize' "$(./svec triangular -d <(echo "a b\t2\na a\t1"))" "$(e
 assert 'detriangularize unsorted' "$(./svec triangular -du <(echo "a b\t2\na a\t1"))" "$(echo "a b\t2\nb a\t2\na a\t1")"
 assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert 'dot orthogonal' "$(./svec dot <(echo "$a") <(echo "$bc"))" ''
+assert 'index' "$(./svec index <(echo 'a a\t1\na b\t2'))" "$(echo "1 1\t1\n1 2\t2")"
 assert 'minmax min' "$(./svec minmax -m 2 <(echo "$abcde"))" "$(echo "b\t2\nc\t3\nd\t4\ne\t5")"
 assert 'minmax max' "$(./svec minmax -x 4 <(echo "$abcde"))" "$(echo "${abc}\nd\t4")"
 assert 'minmax min and max' "$(./svec minmax -m 2 -x 4 <(echo "$abcde"))" "$(echo "${bc}\nd\t4")"
@@ -36,7 +37,6 @@ assert 'negate' "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert 'neighbors' "$(./svec neighbors <(echo 'a\t3') <(echo 'a a\t2\nb b\t2\nc a\t-2'))" "$(echo "a\t1\nc\t-1")"
 assert 'norm' "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert 'normalize' "$(./svec normalize <(echo 'a\t4'))" "$(echo "$a")"
-assert 'numericindex' "$(./svec numericindex <(echo 'a a\t1\na b\t2'))" "$(echo "1 1\t1\n1 2\t2")"
 assert 'pmi' "$(./svec pmi -g6 -u <(echo 'a a\t1\na b\t2\nb a\t2\nb b\t3') | cut -c -12)" "$(echo "a a\t$(awk 'BEGIN {print log(1*6/3/3)}')\na b\t$(awk 'BEGIN {print log(2*6/3/5)}')\nb a\t$(awk 'BEGIN {print log(2*6/3/5)}')\nb b\t$(awk 'BEGIN {print log(3*6/5/5)}')" | cut -c -12)"
 assert 'row' "$(./svec row a <(echo "a a\t1\na b\t2\nb a\t3\nb b\t4"))" "$(echo "a\t1\nb\t2")"
 assert 'scale constant'  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"

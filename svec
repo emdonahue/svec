@@ -104,6 +104,10 @@ case "$CMD" in
 	self join "$@" | arithmetic '*' | self sum
 	;;
 
+    index) #MATRIX; Converts symbolic indices to numeric by numbering them in the order encountered. 1-indexed.
+	svecawk '{for (i=1;i<NF;i++) {if (!($i in dim)) dim[$i]=++ndim; printf("%s%d",i==1?"":" ",dim[$i])}; print "\t"$NF}' "$1"
+	;;
+    
     join) #MATRIX [MATRIX...]; Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.
 	zparseopts -aJOINOPTS -F -D a+:- e:
 	if [[ $# -le 1 ]]; then
@@ -148,10 +152,6 @@ case "$CMD" in
 	local VEC=$(tmp)
 	local NORM=$(cachein "$1" "$VEC" | self norm)
 	self map "\$2/$NORM" $(cacheout "$1" "$VEC")
-	;;
-
-    numericindex) #MATRIX; Converts symbolic indices by numbering them in the order encountered. 1-indexed.
-	svecawk '{for (i=1;i<NF;i++) {if (!($i in dim)) dim[$i]=++ndim; printf("%s%d",i==1?"":" ",dim[$i])}; print "\t"$NF}' "$1"
 	;;
 
     row) #DIMENSION MATRIX; Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing the leftmost dimension.

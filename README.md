@@ -44,13 +44,13 @@ Subcommands:
 	square MATRIX	Elementwise square
 	subtract MINUEND SUBTRAHEND...	Subtract one or more SUBTRAHEND matrices from MINUEND
 	sum MATRIX	Sums all elements and returns a constant
-	triangular MATRIX	Converts between triangular and square 2D matrices by copying/dropping across the diagonal.
+	triangular MATRIX	Converts between lower triangular and square 2D matrices by copying/dropping across the diagonal.
 	vecnorm MATRIX	Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	vecnormalize MATRIX	Normalizes vectors defined by the first N-1 dimension of MATRIX
 	vecsum MATRIX	Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
-	word2vec WINDOW [TOKENS]	Computes matrix of log pointwise mutual information scores from the co occurrence matrix of a stream of whitespace-separated tokens that approximates word2vec embeddings
 ```
 ## TODO
+- awk -v seed=$RANDOM 'BEGIN{srand(seed);}{print rand()" "$0}' 
 - optimize neighbors
 - add -s sorted flag to counts to add extra sorting step. maybe should be global
 - extend caching to all subcommands

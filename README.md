@@ -36,6 +36,7 @@ Subcommands:
 	neighbors VECTOR 2D-MATRIX	Accepts a 2D matrix and a vector and outputs a vector of cosine distances between the rows of the matrix and the input vector
 	norm MATRIX	Computes the entry-wise Euclidean norm of a matrix
 	normalize VECTOR	Normalizes VECTOR using the Euclidean norm.
+	numericindex MATRIX	Converts symbolic indices by numbering them in the order encountered. 1-indexed.
 	row DIMENSION MATRIX	Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing the leftmost dimension.
 	pmi BIGRAMCOUNTS	Compute the pointwise mutual information of the BIGRAMCOUNTS as produced by running count on a bigram stream.
 	scale CONSTANT MATRIX	Scale all elements by a constant

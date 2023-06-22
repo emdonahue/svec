@@ -108,7 +108,7 @@ case "$CMD" in
 	zparseopts -F -D d:=DEINDEX ${c#; Uses index to convert numeric indices to symbolic.}\
 		   r:=REINDEX ${c#; Uses index to convert symbolic indices to numeric.}
 	if [[ $REINDEX ]]; then
-	    
+	    svecawk 'ARGIND==1 {dims[$1]=$2} ARGIND>1 {for (i=1;i<NF;i++) {printf("%s%d",i==1?"":" ",dims[$i])}; print "\t"$NF}' "$REINDEX[2]" "$@"
 	elif [[ $DEINDEX ]]; then
 	    echo "DEINDEX"
 	else

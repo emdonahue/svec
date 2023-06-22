@@ -29,6 +29,7 @@ assert 'detriangularize unsorted' "$(./svec triangular -du <(echo "a b\t2\na a\t
 assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert 'dot orthogonal' "$(./svec dot <(echo "$a") <(echo "$bc"))" ''
 assert 'index' "$(./svec index <(echo 'a a\t10\na b\t20'))" "$(echo "a\t1\nb\t2")"
+assert 'index -r' "$(./svec index -r <(echo 'a\t1\nb\t2') <(echo 'a a\t10\na b\t20'))" "$(echo "1 1\t10\n1 2\t20")"
 assert 'minmax min' "$(./svec minmax -m 2 <(echo "$abcde"))" "$(echo "b\t2\nc\t3\nd\t4\ne\t5")"
 assert 'minmax max' "$(./svec minmax -x 4 <(echo "$abcde"))" "$(echo "${abc}\nd\t4")"
 assert 'minmax min and max' "$(./svec minmax -m 2 -x 4 <(echo "$abcde"))" "$(echo "${bc}\nd\t4")"

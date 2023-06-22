@@ -169,6 +169,10 @@ case "$CMD" in
 	self map '$2*'"$1" "${2:--}"
 	;;
 
+    serialize) #2D-MATRIX; Serializes 2D-MATRIX with numeric indices to a Julia SparseMatrixCSC
+	julia -e 'using SparseArrays; using Serialization; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; for line in eachline(stdin); rcv=split(line); push!(rows,parse(UInt32,rcv[1])); push!(cols,parse(UInt32,rcv[2])); push!(vals,parse(Float64,rcv[3])); end; serialize(stdout,sparse(rows,cols,vals))'
+	;;
+
     sparse) #MATRIX; Removes 0 valued dimensions to create sparse vector or matrix
 	tsvecawk '$NF!=0' "$1"
 	;;

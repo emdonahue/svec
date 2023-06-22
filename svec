@@ -104,8 +104,16 @@ case "$CMD" in
 	self join "$@" | arithmetic '*' | self sum
 	;;
 
-    index) #MATRIX; Converts symbolic indices to numeric by numbering them in the order encountered. 1-indexed.
-	svecawk '{for (i=1;i<NF;i++) {if (!($i in dim)) dim[$i]=++ndim; printf("%s%d",i==1?"":" ",dim[$i])}; print "\t"$NF}' "$1"
+    index) #MATRIX; Generates a symbolic-numeric index of dimensions and maps an existing matrix from symbolic->numeric or numeric->symbolic dimensions. 
+	zparseopts -F -D d:=DEINDEX ${c#; Uses index to convert numeric indices to symbolic.}\
+		   r:=REINDEX ${c#; Uses index to convert symbolic indices to numeric.}
+	if [[ $REINDEX ]]; then
+	    
+	elif [[ $DEINDEX ]]; then
+	    echo "DEINDEX"
+	else
+	    svecawk -vOFS='\t' '{for (i=1;i<NF;i++) {if (!($i in dim)) {dim[$i]=++ndim; print $i,dim[$i]}}}' "$1"
+	fi
 	;;
     
     join) #MATRIX [MATRIX...]; Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.

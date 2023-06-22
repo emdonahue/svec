@@ -105,12 +105,10 @@ case "$CMD" in
 	;;
 
     index) #MATRIX; Generates a symbolic-numeric index of dimensions and maps an existing matrix from symbolic->numeric or numeric->symbolic dimensions. 
-	zparseopts -F -D d:=DEINDEX ${c#; Uses index to convert numeric indices to symbolic.}\
+	zparseopts -F -D d:=REINDEX ${c#; Uses index to convert numeric indices to symbolic.}\
 		   r:=REINDEX ${c#; Uses index to convert symbolic indices to numeric.}
 	if [[ $REINDEX ]]; then
-	    svecawk 'ARGIND==1 {dims[$1]=$2} ARGIND>1 {for (i=1;i<NF;i++) {printf("%s%d",i==1?"":" ",dims[$i])}; print "\t"$NF}' "$REINDEX[2]" "$@"
-	elif [[ $DEINDEX ]]; then
-	    echo "DEINDEX"
+	    svecawk -vDEINDEX="${REINDEX[1]:#-r}" 'ARGIND==1 {if (DEINDEX) {dims[$2]=$1} else {dims[$1]=$2}} ARGIND>1 {for (i=1;i<NF;i++) {printf("%s%s",i==1?"":" ",dims[$i])}; print "\t"$NF}' "$REINDEX[2]" "$@"
 	else
 	    svecawk -vOFS='\t' '{for (i=1;i<NF;i++) {if (!($i in dim)) {dim[$i]=++ndim; print $i,dim[$i]}}}' "$1"
 	fi

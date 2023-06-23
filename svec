@@ -71,8 +71,6 @@ cacheout() { #STREAM TMP; Echo STREAM if it is a file, otherwise TMP. Used to id
     [[ -f "$1" ]] && echo "$1" || echo "$2"
 }
 
-local JULIAPREAMBLE='using SparseArrays; using Serialization; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; _dims=Vector{String}(); for line in eachline(stdin); rcv=split(line); _dim=findfirst(==(rcv[1]),_dims); if (_dim==nothing) _dim=length(push!(_dims,rcv[1])); end; push!(rows,_dim); _dim=findfirst(==(rcv[2]),_dims); if (_dim==nothing) _dim=length(push!(_dims,rcv[2])); end; push!(cols,_dim); push!(vals,parse(Float64,rcv[3])); end; svec=sparse(rows,cols,vals);'
-
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
@@ -125,9 +123,9 @@ case "$CMD" in
 	fi
 	;;
 
-    julia) #MATRIX...; Opens an interactive Julia prompt on MATRIX loaded as an IndexedTable. Creates an array, "svec," which contains the IndexedTable objects in the same order as the arguments supplied.
-	zparseopts -F -D v:=VARNAMES ${c#VARNAME[,VARNAME...]; Accepts a comma-separated list of variable names and assigns NDSparse objects from "svec" to each variable in order.}
-	julia -ie 'using JuliaDB; svec=['${(j:,:)${:-"loadtable(\"${^@}\",indexcols=[],spacedelim=true,header_exists=false,output=\"$(tmp -d)\")"}}']' -e ${VARNAMES[2]:+"${VARNAMES[2]},=svec"}
+    julia) #SERIALIZED; Loads a serialized matrix into a Julia instance as svec. Symbolic dimensions are loaded as _dims.
+	zparseopts -F -D i=INTERACTIVE ${c#; Runs Julia in interactive mode.}
+	julia $INTERACTIVE <(echo 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(ARGS[1]);'; [[ $INTERACTIVE ]] || echo 'serialize(stdout,(svec,_dims));') "${1:-/dev/stdin}"
 	;;
     
     map) #EXPRESSION MATRIX; Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
@@ -182,7 +180,7 @@ case "$CMD" in
 	if [[ $DESERIALIZE ]]; then
 	    julia -e 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(stdin); (r,c,v)=findnz(svec); for i=1:length(r); println(_dims[r[i]]," ",_dims[c[i]],"\t",v[i]); end' < "${1:-/dev/stdin}"
 	else
-	    julia -e $JULIAPREAMBLE'serialize(stdout,(svec,_dims))' < "${1:-/dev/stdin}"
+	    julia -e 'using SparseArrays; using Serialization; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; _dims=Vector{String}(); for line in eachline(stdin); rcv=split(line); _dim=findfirst(==(rcv[1]),_dims); if (_dim==nothing) _dim=length(push!(_dims,rcv[1])); end; push!(rows,_dim); _dim=findfirst(==(rcv[2]),_dims); if (_dim==nothing) _dim=length(push!(_dims,rcv[2])); end; push!(cols,_dim); push!(vals,parse(Float64,rcv[3])); end; svec=sparse(rows,cols,vals); serialize(stdout,(svec,_dims))' < "${1:-/dev/stdin}"
 	fi
 	;;
 

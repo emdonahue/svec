@@ -175,8 +175,13 @@ case "$CMD" in
 	self map '$2*'"$1" "${2:--}"
 	;;
 
-    serialize) #2D-MATRIX; Serializes 2D-MATRIX with numeric indices to a Julia SparseMatrixCSC
-	julia -e 'using SparseArrays; using Serialization; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; for line in eachline(stdin); rcv=split(line); push!(rows,parse(UInt32,rcv[1])); push!(cols,parse(UInt32,rcv[2])); push!(vals,parse(Float64,rcv[3])); end; serialize(stdout,sparse(rows,cols,vals))'
+    serialize) #2D-MATRIX; (De)serializes 2D-MATRIX with numeric indices to a Julia SparseMatrixCSC
+	zparseopts -F -D d=DESERIALIZE ${c#; Deserializes a serialized matrix on stdin.}
+	if [[ $DESERIALIZE ]]; then
+	    julia -e 'using SparseArrays; using Serialization; (x,dims)=deserialize(stdin); (r,c,v)=findnz(x); for i=1:length(r); println(dims[r[i]]," ",dims[c[i]],"\t",v[i]); end' < "${1:-/dev/stdin}"
+	else
+	    julia -e 'using SparseArrays; using Serialization; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; dims=Vector{String}(); for line in eachline(stdin); rcv=split(line); dim=findfirst(==(rcv[1]),dims); if (dim==nothing) dim=length(push!(dims,rcv[1])); end; push!(rows,dim); dim=findfirst(==(rcv[2]),dims); if (dim==nothing) dim=length(push!(dims,rcv[2])); end; push!(cols,dim); push!(vals,parse(Float64,rcv[3])); end; serialize(stdout,(sparse(rows,cols,vals),dims))' < "${1:-/dev/stdin}"
+	fi
 	;;
 
     sparse) #MATRIX; Removes 0 valued dimensions to create sparse vector or matrix
@@ -201,7 +206,7 @@ case "$CMD" in
 
     triangular) #MATRIX; Converts between lower triangular and square 2D matrices by copying/dropping across the diagonal.
 	zparseopts -F -D d=SQUARE ${c#; De-triangularize the matrix into a dense square.}\
-		   u=UNSORTED ${c#; Do not sort the results into normalized svec format. Faster if you only need counts, not joins.}
+		   u=UNSORTED ${c#; Do not sort the results into normalized svec format when detriangularizing with -d. Faster if you only need counts, not joins.}
 	if [[ $SQUARE ]]; then
 	    svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | if [[ $UNSORTED ]]; then cat; else sort; fi
 	else

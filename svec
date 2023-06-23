@@ -125,7 +125,7 @@ case "$CMD" in
 
     julia) #SERIALIZED; Loads a serialized matrix into a Julia instance as svec. Symbolic dimensions are loaded as _dims.
 	zparseopts -F -D i=INTERACTIVE ${c#; Runs Julia in interactive mode.}
-	julia $INTERACTIVE <(echo 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(ARGS[1]);'; [[ $INTERACTIVE ]] || echo 'serialize(stdout,(svec,_dims));') "${1:-/dev/stdin}"
+	julia $INTERACTIVE <(echo 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(ARGS[1]);'; [[ $INTERACTIVE ]] || echo "$1;serialize(stdout,(svec,_dims));") ${INTERACTIVE:+"${1:-/dev/stdin}"} $2
 	;;
     
     map) #EXPRESSION MATRIX; Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.

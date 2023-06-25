@@ -215,14 +215,13 @@ case "$CMD" in
 	svecawk '{n+=$NF} END {print n}' "$1"
 	;;
 
+    symmetric) #LOWERTRIANGULAR; Converts a LOWERTRIANGULAR matrix into a symmetric matrix by reflecting the lower half across the diagonal.
+	zparseopts -F -D u=UNSORTED ${c#; Do not sort the results into normalized svec format when reflecting. Faster if you only need counts, not joins.}
+	svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | if [[ $UNSORTED ]]; then cat; else sort; fi
+	;;
+
     triangular) #MATRIX; Converts between lower triangular and square 2D matrices by copying/dropping across the diagonal.
-	zparseopts -F -D d=SQUARE ${c#; De-triangularize the matrix into a dense square.}\
-		   u=UNSORTED ${c#; Do not sort the results into normalized svec format when detriangularizing with -d. Faster if you only need counts, not joins.}
-	if [[ $SQUARE ]]; then
-	    svecawk '{print} $1!=$2 {print $2,$1"\t"$3}' "$1" | if [[ $UNSORTED ]]; then cat; else sort; fi
-	else
-	    svecawk '$1<=$2' "$1"
-	fi
+	svecawk '$1<=$2' "$1"
 	;;
 
     vecnorm) #MATRIX; Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices

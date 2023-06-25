@@ -23,9 +23,9 @@ assert 'add n' "$(./svec add <(echo $a) <(echo $bc) <(echo $a) <(echo $bc))" "$(
 assert 'analogy' "$(./svec analogy <(echo $a) <(echo $a) <(echo $bc))" "$(echo "$bc")"
 assert analogicalinfluence "$(./svec analogicalinfluence <(echo 'b\t-1\nc\t5') <(echo 'b\t-2') <(echo 'a\t10\nb\t-10') <(echo 'a\t11\nb\t-8'))" "$(echo "dimension\t|q-k|-|(q-k)–(w-m)|\t|q-k|-|(q-k)–w|\t|q-k|-|(q-k)+m|\t|q-k|\na\t10\t10\t0\t11\nb\t3\t2\t-1\t6\nc\t-5\t0\t-5\t0")"
 assert 'counts' "$(./svec counts <(echo 'c\nc\nc\nb\na\nb'))" "$(echo "$abc")"
-assert 'triangularize' "$(./svec triangular <(echo "a a\t1\na b\t2\nb a\t2"))" "$(echo "a a\t1\na b\t2")"
-assert 'detriangularize' "$(./svec triangular -d <(echo "a b\t2\na a\t1"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
-assert 'detriangularize unsorted' "$(./svec triangular -du <(echo "a b\t2\na a\t1"))" "$(echo "a b\t2\nb a\t2\na a\t1")"
+assert 'triangular' "$(./svec triangular <(echo "a a\t1\na b\t2\nb a\t2"))" "$(echo "a a\t1\na b\t2")"
+assert 'symmetric' "$(./svec symmetric <(echo "a b\t2\na a\t1"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
+assert 'symmetric unsorted' "$(./svec symmetric -u <(echo "a b\t2\na a\t1"))" "$(echo "a b\t2\nb a\t2\na a\t1")"
 assert 'dimensions' "$(./svec dimensions <(echo "$abc"))" "$(echo 'a\nb\nc')"
 assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
 assert 'dot orthogonal' "$(./svec dot <(echo "$a") <(echo "$bc"))" ''

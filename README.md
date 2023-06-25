@@ -48,6 +48,7 @@ Subcommands:
 	square MATRIX	Elementwise square
 	subtract MINUEND SUBTRAHEND...	Subtract one or more SUBTRAHEND matrices from MINUEND
 	sum MATRIX	Sums all elements and returns a constant
+	symmetric LOWERTRIANGULAR	Converts a LOWERTRIANGULAR matrix into a symmetric matrix by reflecting the lower half across the diagonal.
 	triangular MATRIX	Converts between lower triangular and square 2D matrices by copying/dropping across the diagonal.
 	vecnorm MATRIX	Eliminates the rightmost dimension of a matrix and computes the Euclidean norms to use as values for the remaining indices
 	vecnormalize MATRIX	Normalizes vectors defined by the first N-1 dimension of MATRIX

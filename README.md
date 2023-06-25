@@ -28,6 +28,7 @@ Subcommands:
 	analogicalinfluence VECTOR VECTOR VECTOR VECTOR	Given the analogy man:king::woman:queen, computes how much each dimension of the imputed gender relationship vector woman-man contributes to the empirical relationship vector queen-king. Specifically, |q-k| - |(q-k) – (w-m)|, or the distance between the empirical relationship and the error introduced by the approximation, which measures which dimensions cover the most distance in the correct direction, discounted as high error makes them miss their mark. High positive values contribute more, low negatives less.
 	counts TOKENS	Prints a vector of counts from a newline-separated stream of tokens
 	deserialize SERIALIZED	Deserializes Julia SparseMatrixCSC or SparseVector to ASCII svec format. 
+	dimensions MATRIX	Print only the dimensions (dropping the values).
 	dot MATRIX [MATRIX...]	Dot product of multiple vectors
 	index MATRIX	Generates a symbolic-numeric index of dimensions and maps an existing matrix from symbolic->numeric or numeric->symbolic dimensions. 
 	join MATRIX [MATRIX...]	Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.

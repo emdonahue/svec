@@ -104,6 +104,10 @@ case "$CMD" in
     deserialize) #SERIALIZED; Deserializes Julia SparseMatrixCSC or SparseVector to ASCII svec format. 
 	julia -e 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(stdin); (r,cv...)=findnz(svec); for i=1:length(r); println(_dims[r[i]],length(cv)==2 ? " " : "",length(cv)==2 ? _dims[cv[1][i]] : "","\t",cv[end][i]); end' < "${1:-/dev/stdin}"
 	;;
+
+    dimensions) #MATRIX; Print only the dimensions (dropping the values).
+	cut -f1 "${1:--}"
+	;;
     
     dot) #MATRIX [MATRIX...]; Dot product of multiple vectors
 	self join "$@" | arithmetic '*' | self sum
@@ -147,8 +151,8 @@ case "$CMD" in
     minmax) #; Filters values to be within the specified minimum and/or maximum.
 	zparseopts -F -D m:=MIN ${c#MINIMUM; Discard values <= MINIMUM}\
 		   M:=MIN ${c#MINIMUM; Discard values < MINIMUM}\
-		   x:=MAX ${c#MINIMUM; Discard values >= MAXIMUM}\
-		   X:=MAX ${c#MINIMUM; Discard values > MAXIMUM}
+		   x:=MAX ${c#MAXIMUM; Discard values >= MAXIMUM}\
+		   X:=MAX ${c#MAXIMUM; Discard values > MAXIMUM}
 	tsvecawk "${${MIN[2]:+$MIN[2]<${${MIN[1]:/-m/=}:/-M/}\$2}:-1} && ${${MAX[2]:+\$2<${${MAX[1]:/-x/=}:/-X/}$MAX[2]}:-1}" "$1"
 	;;
     

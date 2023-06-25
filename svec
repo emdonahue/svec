@@ -1,9 +1,10 @@
 #!/bin/zsh
-#TODO awk -v seed=$RANDOM 'BEGIN{srand(seed);}{print rand()" "$0}' 
 #TODO optimize neighbors
 #TODO add -s sorted flag to counts to add extra sorting step. maybe should be global
 #TODO extend caching to all subcommands
-#TODO join behaves incorrectly when presented with the zero vector (a completely empty file) using auto. recursively pass number of files processed and manually compute join output
+#TODO join behaves incorrectly when presented with the zero vector (a completely empty file) using auto. recursively pass number of files processed and manually compute join output. test with subtract
+#TODO experiment with </dev/tty for interactive julia, as in kb
+#TODO 
 
 set -o errexit
 set -o pipefail
@@ -100,6 +101,10 @@ case "$CMD" in
 	sort "${1:--}" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
 
+    deserialize) #SERIALIZED; Deserializes Julia SparseMatrixCSC or SparseVector to ASCII svec format. 
+	julia -e 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(stdin); (r,cv...)=findnz(svec); for i=1:length(r); println(_dims[r[i]],length(cv)==2 ? " " : "",length(cv)==2 ? _dims[cv[1][i]] : "","\t",cv[end][i]); end' < "${1:-/dev/stdin}"
+	;;
+    
     dot) #MATRIX [MATRIX...]; Dot product of multiple vectors
 	self join "$@" | arithmetic '*' | self sum
 	;;
@@ -175,13 +180,8 @@ case "$CMD" in
 	self map '$2*'"$1" "${2:--}"
 	;;
 
-    serialize) #2D-MATRIX; (De)serializes 2D-MATRIX with numeric indices to a Julia SparseMatrixCSC
-	zparseopts -F -D d=DESERIALIZE ${c#; Deserializes a serialized matrix on stdin.}
-	if [[ $DESERIALIZE ]]; then
-	    julia -e 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(stdin); (r,c,v)=findnz(svec); for i=1:length(r); println(_dims[r[i]]," ",_dims[c[i]],"\t",v[i]); end' < "${1:-/dev/stdin}"
-	else
-	    julia -e 'using SparseArrays; using Serialization; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; _lookup=Dict{String,UInt32}(); _dims=Vector{String}(); for line in eachline(stdin); rcv=split(line); push!(rows,get!(_lookup,rcv[1]) do; length(push!(_dims,rcv[1])); end); push!(cols,get!(_lookup,rcv[2]) do; length(push!(_dims,rcv[2])); end); push!(vals,parse(Float64,rcv[3])); end; svec=sparse(rows,cols,vals); serialize(stdout,(svec,_dims))' < "${1:-/dev/stdin}"
-	fi
+    serialize) #MATRIX; Serializes 1D or 2D MATRIX to a Julia SparseArray. Output is a pair of a SparseArray and a map from numeric to symbolic dimensions to be used for deserializing.
+	julia -e 'using SparseArrays; using Serialization; rcv=[]; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; _lookup=Dict{String,UInt32}(); _dims=Vector{String}(); for line in eachline(stdin); global rcv=split(line); push!(rows,get!(_lookup,rcv[1]) do; length(push!(_dims,rcv[1])); end); if (length(rcv)==3) push!(cols,get!(_lookup,rcv[2]) do; length(push!(_dims,rcv[2])); end); end; push!(vals,parse(Float64,rcv[end])); end; if (length(rcv)==3); svec=sparse(rows,cols,vals); else svec=sparsevec(rows,vals); end; serialize(stdout,(svec,_dims))' < "${1:-/dev/stdin}"
 	;;
 
     sparse) #MATRIX; Removes 0 valued dimensions to create sparse vector or matrix

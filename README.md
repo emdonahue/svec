@@ -27,10 +27,11 @@ Subcommands:
 	analogy VECTOR VECTOR VECTOR	Computes the analogy vector from 3 word2vec embeddings man:king::woman:queen => king-man+woman=queen
 	analogicalinfluence VECTOR VECTOR VECTOR VECTOR	Given the analogy man:king::woman:queen, computes how much each dimension of the imputed gender relationship vector woman-man contributes to the empirical relationship vector queen-king. Specifically, |q-k| - |(q-k) – (w-m)|, or the distance between the empirical relationship and the error introduced by the approximation, which measures which dimensions cover the most distance in the correct direction, discounted as high error makes them miss their mark. High positive values contribute more, low negatives less.
 	counts TOKENS	Prints a vector of counts from a newline-separated stream of tokens
+	deserialize SERIALIZED	Deserializes Julia SparseMatrixCSC or SparseVector to ASCII svec format. 
 	dot MATRIX [MATRIX...]	Dot product of multiple vectors
 	index MATRIX	Generates a symbolic-numeric index of dimensions and maps an existing matrix from symbolic->numeric or numeric->symbolic dimensions. 
 	join MATRIX [MATRIX...]	Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.
-	julia MATRIX...	Opens an interactive Julia prompt on MATRIX loaded as an IndexedTable. Creates an array, "svec," which contains the IndexedTable objects in the same order as the arguments supplied.
+	julia SERIALIZED	Loads a serialized matrix into a Julia instance as svec. Symbolic dimensions are loaded as _dims.
 	map EXPRESSION MATRIX	Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
 	minmax 	Filters values to be within the specified minimum and/or maximum.
 	negate MATRIX	Negates a vector
@@ -40,7 +41,7 @@ Subcommands:
 	row DIMENSION MATRIX	Filters by rows where the leftmost column matches DIMENSION and returns an N-1 matrix by removing the leftmost dimension.
 	pmi BIGRAMCOUNTS	Compute the pointwise mutual information of the BIGRAMCOUNTS as produced by running count on a bigram stream.
 	scale CONSTANT MATRIX	Scale all elements by a constant
-	serialize 2D-MATRIX	Serializes 2D-MATRIX with numeric indices to a Julia SparseMatrixCSC
+	serialize MATRIX	Serializes 1D or 2D MATRIX to a Julia SparseArray. Output is a pair of a SparseArray and a map from numeric to symbolic dimensions to be used for deserializing.
 	sparse MATRIX	Removes 0 valued dimensions to create sparse vector or matrix
 	sqrt MATRIX	Elementwise square root
 	square MATRIX	Elementwise square
@@ -52,8 +53,9 @@ Subcommands:
 	vecsum MATRIX	Eliminates the rightmost dimension of a matrix and computes the sums to use as values for the remaining indices
 ```
 ## TODO
-- awk -v seed=$RANDOM 'BEGIN{srand(seed);}{print rand()" "$0}' 
 - optimize neighbors
 - add -s sorted flag to counts to add extra sorting step. maybe should be global
 - extend caching to all subcommands
-- join behaves incorrectly when presented with the zero vector (a completely empty file) using auto. recursively pass number of files processed and manually compute join output
+- join behaves incorrectly when presented with the zero vector (a completely empty file) using auto. recursively pass number of files processed and manually compute join output. test with subtract
+- experiment with </dev/tty for interactive julia, as in kb
+- 

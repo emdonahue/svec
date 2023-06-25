@@ -31,7 +31,7 @@ Subcommands:
 	dot MATRIX [MATRIX...]	Dot product of multiple vectors
 	index MATRIX	Generates a symbolic-numeric index of dimensions and maps an existing matrix from symbolic->numeric or numeric->symbolic dimensions. 
 	join MATRIX [MATRIX...]	Concatenates numerical values with the same indices together for further processing (summation, multiplication, etc.). Empty rows are filled with 0, but if multiple vectors are joined, there may be fewer 0s than vectors.
-	julia SERIALIZED	Loads a serialized matrix into a Julia instance as svec. Symbolic dimensions are loaded as _dims.
+	julia [PROGRAM] SERIALIZED	Loads a serialized object into a Julia instance as svec. Symbolic dimensions are loaded as _dims. If -i is not specified, PROGRAM is interpreted as a function body and its return value is serialized along with _dims. Any value may be serialized for subsequent processing with the julia command, but only SparseArrays can be deserialized into ASCII svec format.
 	map EXPRESSION MATRIX	Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.
 	minmax 	Filters values to be within the specified minimum and/or maximum.
 	negate MATRIX	Negates a vector

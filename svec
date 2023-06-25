@@ -49,7 +49,7 @@ cache() { #Return $1 if $1 is a file, or else write it to a temp file and return
 	echo "$1"
     else
 	local TMPFILE=$(tmp)
-	cat $1 > "$TMPFILE"
+	cat "$1" > "$TMPFILE"
 	echo "$TMPFILE"
     fi
 }
@@ -128,9 +128,16 @@ case "$CMD" in
 	fi
 	;;
 
-    julia) #SERIALIZED; Loads a serialized matrix into a Julia instance as svec. Symbolic dimensions are loaded as _dims.
+    julia) #[PROGRAM] SERIALIZED; Loads a serialized object into a Julia instance as svec. Symbolic dimensions are loaded as _dims. If -i is not specified, PROGRAM is interpreted as a function body and its return value is serialized along with _dims. Any value may be serialized for subsequent processing with the julia command, but only SparseArrays can be deserialized into ASCII svec format.
 	zparseopts -F -D i=INTERACTIVE ${c#; Runs Julia in interactive mode.}
-	julia $INTERACTIVE <(echo 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(ARGS[1]);'; [[ $INTERACTIVE ]] || echo "$1;serialize(stdout,(svec,_dims));") ${INTERACTIVE:+"${1:-/dev/stdin}"} $2
+	local PROGRAM='using SparseArrays; using Serialization; (svec,_dims)=deserialize(ARGS[1]);'
+	if [[ ! $INTERACTIVE ]]; then PROGRAM=$PROGRAM"function julia() $1 end; serialize(stdout,(julia(),_dims));"; shift; fi
+	local SERIALIZED=$(cache "${1:-/dev/stdin}")
+	if [[ $INTERACTIVE ]]; then
+	    julia -i -e "$PROGRAM" "$SERIALIZED" </dev/tty
+	else
+	    julia -i -e "$PROGRAM" "$SERIALIZED"
+	fi
 	;;
     
     map) #EXPRESSION MATRIX; Performs an element-wise arithmetic calculation to the numeric value of each matrix index. The current value can be accessed as $2 or $NF. Results of the arithmetic expression are automatically assigned to the numeric value.

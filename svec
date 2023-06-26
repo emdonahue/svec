@@ -141,7 +141,7 @@ case "$CMD" in
 	if [[ $INTERACTIVE ]]; then
 	    julia -i -e "$PROGRAM" "$SERIALIZED" </dev/tty
 	else
-	    julia -i -e "$PROGRAM" "$SERIALIZED"
+	    julia -e "$PROGRAM" "$SERIALIZED"
 	fi
 	;;
     

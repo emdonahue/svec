@@ -102,7 +102,7 @@ case "$CMD" in
 	;;
 
     deserialize) #SERIALIZED; Deserializes Julia SparseMatrixCSC or SparseVector to ASCII svec format. 
-	julia -e 'using SparseArrays; using Serialization; (svec,_dims)=deserialize(stdin); (r,cv...)=findnz(svec); for i=1:length(r); println(_dims[r[i]],length(cv)==2 ? " " : "",length(cv)==2 ? _dims[cv[1][i]] : "","\t",cv[end][i]); end' < "${1:-/dev/stdin}"
+	julia -e 'using SparseArrays, Serialization; (svec,_dims)=deserialize(stdin); (r,cv...)=findnz(svec); for i=1:length(r); println(_dims[r[i]],length(cv)==2 ? " " : "",length(cv)==2 ? _dims[cv[1][i]] : "","\t",cv[end][i]); end' < "${1:-/dev/stdin}"
 	;;
 
     dimensions) #MATRIX; Print only the dimensions (dropping the values).
@@ -133,8 +133,9 @@ case "$CMD" in
 	;;
 
     julia) #[PROGRAM] SERIALIZED; Loads a serialized object into a Julia instance as svec. Symbolic dimensions are loaded as _dims. If -i is not specified, PROGRAM is interpreted as a function body and its return value is serialized along with _dims. Any value may be serialized for subsequent processing with the julia command, but only SparseArrays can be deserialized into ASCII svec format.
-	zparseopts -F -D i=INTERACTIVE ${c#; Runs Julia in interactive mode.}
-	local PROGRAM='using SparseArrays; using Serialization; (svec,_dims)=deserialize(ARGS[1]);'
+	zparseopts -F -D i=INTERACTIVE ${c#; Runs Julia in interactive mode.}\
+		   u:=USING ${c#PACKAGE,...; Accepts a comma-separated list of packages to import before running the program.}
+	local PROGRAM='using SparseArrays, Serialization'"${USING:+,$USING[2]}"'; (svec,_dims)=deserialize(ARGS[1]);'
 	if [[ ! $INTERACTIVE ]]; then PROGRAM=$PROGRAM"function julia() $1 end; serialize(stdout,(julia(),_dims));"; shift; fi
 	local SERIALIZED=$(cache "${1:-/dev/stdin}")
 	if [[ $INTERACTIVE ]]; then
@@ -181,9 +182,9 @@ case "$CMD" in
 	;;
 
     pmi) #BIGRAMCOUNTS; Compute the pointwise mutual information of the BIGRAMCOUNTS as produced by running count on a bigram stream.
-	zparseopts -F -D u=UNORDERED ${c#; Unordered bigrams - Assumes the bigrams are in normalized order and the matrix is symmetric, so only count them once per pair.}
+	zparseopts -F -D u=UNORDERED ${c#; Unordered bigrams - Assumes the bigrams are in normalized order and the matrix is symmetric, so only count them once per pair (counts are already sums of both directions).}
 	local BIGRAMS=$(tmp) UNIGRAMS=$(tmp)
-	local BCOUNT=$(cachein "$1" "$BIGRAMS" | tee >(self vecsum > "$UNIGRAMS") | if [[ $UNORDERED ]]; then self triangular; else cat; fi | self sum)
+	local BCOUNT=$(cachein "$1" "$BIGRAMS" | tee >(self vecsum > "$UNIGRAMS") | if [[ $UNORDERED ]]; then self triangular; else cat; fi | self sum) #Input must be square matrix as dim 1 is used for unigram counts. Alternatively, could accept triangular and generate unsorted square for counts.
 	join "$(cacheout "$1" "$BIGRAMS")" "$UNIGRAMS" | sort -k2,2 | join -12 -o 1.1,0,1.3,1.4,2.2 - "$UNIGRAMS" | sort -k1,2 | svecawk -vD="$BCOUNT" '{print $1,$2 "\t" (log($3) + log(D) - log($4) - log($5))}'	#log((#(w,c)*|D|) / (#(w)*#(c)))
 	;;
 
@@ -192,7 +193,7 @@ case "$CMD" in
 	;;
 
     serialize) #MATRIX; Serializes 1D or 2D MATRIX to a Julia SparseArray. Output is a pair of a SparseArray and a map from numeric to symbolic dimensions to be used for deserializing.
-	julia -e 'using SparseArrays; using Serialization; rcv=[]; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; _lookup=Dict{String,UInt32}(); _dims=Vector{String}(); for line in eachline(stdin); global rcv=split(line); push!(rows,get!(_lookup,rcv[1]) do; length(push!(_dims,rcv[1])); end); if (length(rcv)==3) push!(cols,get!(_lookup,rcv[2]) do; length(push!(_dims,rcv[2])); end); end; push!(vals,parse(Float64,rcv[end])); end; if (length(rcv)==3); svec=sparse(rows,cols,vals); else svec=sparsevec(rows,vals); end; serialize(stdout,(svec,_dims))' < "${1:-/dev/stdin}"
+	julia -e 'using SparseArrays, Serialization; rcv=[]; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; _lookup=Dict{String,UInt32}(); _dims=Vector{String}(); for line in eachline(stdin); global rcv=split(line); push!(rows,get!(_lookup,rcv[1]) do; length(push!(_dims,rcv[1])); end); if (length(rcv)==3) push!(cols,get!(_lookup,rcv[2]) do; length(push!(_dims,rcv[2])); end); end; push!(vals,parse(Float64,rcv[end])); end; if (length(rcv)==3); svec=sparse(rows,cols,vals); else svec=sparsevec(rows,vals); end; serialize(stdout,(svec,_dims))' < "${1:-/dev/stdin}"
 	;;
 
     sparse) #MATRIX; Removes 0 valued dimensions to create sparse vector or matrix

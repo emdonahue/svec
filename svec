@@ -102,7 +102,7 @@ case "$CMD" in
 	;;
 
     deserialize) #SERIALIZED; Deserializes Julia SparseMatrixCSC or SparseVector to ASCII svec format. 
-	julia -e 'using SparseArrays, Serialization; (svec,_dims)=deserialize(stdin); (r,cv...)=findnz(svec); for i=1:length(r); println(_dims[r[i]],length(cv)==2 ? " " : "",length(cv)==2 ? _dims[cv[1][i]] : "","\t",cv[end][i]); end' < "${1:-/dev/stdin}"
+	julia -e 'using SparseArrays, Serialization; (svec,_dims)=deserialize(stdin); (r,cv...)=findnz(sparse(svec)); for i=1:length(r); println(_dims[r[i]],length(cv)==2 ? " " : "",length(cv)==2 ? _dims[cv[1][i]] : "","\t",cv[end][i]); end' < "${1:-/dev/stdin}"
 	;;
 
     dimensions) #MATRIX; Print only the dimensions (dropping the values).
@@ -184,7 +184,7 @@ case "$CMD" in
     pmi) #BIGRAMCOUNTS; Compute the pointwise mutual information of the BIGRAMCOUNTS as produced by running count on a bigram stream.
 	zparseopts -F -D u=UNORDERED ${c#; Unordered bigrams - Assumes the bigrams are in normalized order and the matrix is symmetric, so only count them once per pair (counts are already sums of both directions).}
 	local BIGRAMS=$(tmp) UNIGRAMS=$(tmp)
-	local BCOUNT=$(cachein "$1" "$BIGRAMS" | tee >(self vecsum > "$UNIGRAMS") | if [[ $UNORDERED ]]; then self triangular; else cat; fi | self sum) #Input must be square matrix as dim 1 is used for unigram counts. Alternatively, could accept triangular and generate unsorted square for counts.
+	local BCOUNT=$(cachein "$1" "$BIGRAMS" | tee >(self vecsum > "$UNIGRAMS") | if [[ $UNORDERED ]]; then self triangular; else cat; fi | self sum) #Input must be square matrix as dim 1 is used for unigram counts.
 	join "$(cacheout "$1" "$BIGRAMS")" "$UNIGRAMS" | sort -k2,2 | join -12 -o 1.1,0,1.3,1.4,2.2 - "$UNIGRAMS" | sort -k1,2 | svecawk -vD="$BCOUNT" '{print $1,$2 "\t" (log($3) + log(D) - log($4) - log($5))}'	#log((#(w,c)*|D|) / (#(w)*#(c)))
 	;;
 

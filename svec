@@ -88,8 +88,12 @@ case "$CMD" in
 	self join -a1 -a2 "$@" | arithmetic "+" | self sparse
 	;;
     
-    analogy) #VECTOR VECTOR VECTOR; Computes the analogy vector from 3 word2vec embeddings man:king::woman:queen => king-man+woman=queen
-	self add <(self negate "$1") "$2" "$3"
+    analogy) #VECTOR VECTOR VECTOR [MATRIX]; Computes the analogy vector from 3 word2vec embeddings man:king::woman:queen => king-man+woman=queen. If MATRIX supplied, treat VECTOR... as row names to be looked up with the 'row' subcommand in MATRIX.
+	if [[ 3 < $# ]]; then
+	    self add <(self negate <(self row "$1" "$4")) <(self row "$2" "$4") <(self row "$3" "$4")
+	else
+	    self add <(self negate "$1") "$2" "$3"
+	fi
 	;;
 
     analogicalinfluence) #VECTOR VECTOR VECTOR VECTOR; Given the analogy man:king::woman:queen, computes how much each dimension of the imputed gender relationship vector woman-man contributes to the empirical relationship vector queen-king. Specifically, |q-k| - |(q-k) – (w-m)|, or the distance between the empirical relationship and the error introduced by the approximation, which measures which dimensions cover the most distance in the correct direction, discounted as high error makes them miss their mark. High positive values contribute more, low negatives less.

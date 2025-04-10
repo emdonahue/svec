@@ -26,6 +26,7 @@ assert analogicalinfluence "$(./svec analogicalinfluence <(echo 'b\t-1\nc\t5') <
 assert 'counts' "$(./svec counts <(echo 'c\nc\nc\nb\na\nb'))" "$(echo "$abc")"
 assert 'triangular' "$(./svec triangular <(echo "a a\t1\na b\t2\nb a\t2"))" "$(echo "a a\t1\na b\t2")"
 assert 'symmetric' "$(./svec symmetric <(echo "a b\t2\na a\t1"))" "$(echo "a a\t1\na b\t2\nb a\t2")"
+assert 'symmetric diagonal' "$(./svec symmetric -d <(echo "a b\t2\na a\t1"))" "$(echo "a a\t1\na a\t1\na b\t2\nb a\t2")"
 assert 'symmetric unsorted' "$(./svec symmetric -u <(echo "a b\t2\na a\t1"))" "$(echo "a b\t2\nb a\t2\na a\t1")"
 assert 'dimensions' "$(./svec dimensions <(echo "$abc"))" "$(echo 'a\nb\nc')"
 assert 'dot' "$(./svec dot <(echo "$abc") <(echo "$abc"))" '14'
@@ -41,7 +42,7 @@ assert 'negate' "$(./svec negate <(echo $abc))" "$(echo "$abcn")"
 assert 'neighbors' "$(./svec neighbors <(echo 'a\t3') <(echo 'a a\t2\nb b\t2\nc a\t-2'))" "$(echo "a\t1\nc\t-1")"
 assert 'norm' "$(./svec norm <(echo "a\t2\nb\t2\nc\t2\nd\t2"))" '4'
 assert 'normalize' "$(./svec normalize <(echo 'a\t4'))" "$(echo "$a")"
-assert 'pmi' "$(./svec pmi -g6 -u <(echo 'a a\t1\na b\t2\nb a\t2\nb b\t3') | cut -c -12)" "$(echo "a a\t$(awk 'BEGIN {print log(1*6/3/3)}')\na b\t$(awk 'BEGIN {print log(2*6/3/5)}')\nb a\t$(awk 'BEGIN {print log(2*6/3/5)}')\nb b\t$(awk 'BEGIN {print log(3*6/5/5)}')" | cut -c -12)"
+assert 'pmi' "$(./svec pmi -g6 <(echo 'a a\t1\na b\t2\nb a\t2\nb b\t3') | cut -c -12)" "$(echo "a a\t$(awk 'BEGIN {print log(1*6/3/3)}')\na b\t$(awk 'BEGIN {print log(2*6/3/5)}')\nb a\t$(awk 'BEGIN {print log(2*6/3/5)}')\nb b\t$(awk 'BEGIN {print log(3*6/5/5)}')" | cut -c -12)"
 assert 'row' "$(./svec row a <(echo "a a\t1\na b\t2\nb a\t3\nb b\t4"))" "$(echo "a\t1\nb\t2")"
 assert 'scale constant'  "$(./svec scale 2 <(echo $abc))" "$(echo $abc2)"
 assert 'scale arithmetic expressions'  "$(./svec scale '(1+1)' <(echo $abc))" "$(echo "$abc2")"

@@ -100,13 +100,17 @@ case "$CMD" in
 	#1:dim 2:m 3:k 4:w 5:q
 	self join -a1 -a2 -e0 "$@" | tsvecawk 'BEGIN {print "dimension","|q-k|-|(q-k)–(w-m)|","|q-k|-|(q-k)–w|","|q-k|-|(q-k)+m|","|q-k|"} {truedist=$5-$3; error=truedist-($4-$2); print $1,abs(truedist)-abs(error),abs(truedist)-abs(truedist-$4),abs(truedist)-abs(truedist+$2),abs(truedist)} function abs(x) {return x<0 ? -x : x}'
 	;;
+
+    arithmetic) #OPERATOR [MATRIX]; Given a non-standard matrix with tab-separated values, combine the values using the operator.
+        cat "${2:--}" | arithmetic "$1"
+        ;;
     
     counts) #TOKENS; Prints a vector of counts from a newline-separated stream of tokens
 	sort "${1:--}" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
 
-    deserialize) #SERIALIZED; Deserializes Julia SparseMatrixCSC or SparseVector to ASCII svec format. 
-	julia -e 'using SparseArrays, Serialization; (svec,_dims)=deserialize(stdin); (r,cv...)=findnz(sparse(svec)); for i=1:length(r); println(_dims[r[i]],length(cv)==2 ? " " : "",length(cv)==2 ? _dims[cv[1][i]] : "","\t",cv[end][i]); end' < "${1:-/dev/stdin}"
+    deserialize) #SYMBOLTABLE SERIALIZED; Deserializes Cartesian embedded MATRIX to a symbolic embedding using SYMBOLTABLE, which is an list of dimensions whose order becomes the Cartesian dimension.
+        awk 'NR==FNR {symtab[NR]=$1} NR!=FNR {for (i=1;i<NF;i++) printf(symtab[$i]" "); print("\t"$NF)}' "${1:--}" "${2:--}"
 	;;
 
     dimensions) #MATRIX; Print only the dimensions (dropping the values).
@@ -136,16 +140,15 @@ case "$CMD" in
 	fi
 	;;
 
-    julia) #[PROGRAM] SERIALIZED; Loads a serialized object into a Julia instance as svec. Symbolic dimensions are loaded as _dims. If -i is not specified, PROGRAM is interpreted as a function body and its return value is serialized along with _dims. Any value may be serialized for subsequent processing with the julia command, but only SparseArrays can be deserialized into ASCII svec format.
-	zparseopts -F -D i=INTERACTIVE ${c#; Runs Julia in interactive mode.}\
+    julia) #[PROGRAM] SERIALIZED; Loads a serialized object into a Julia instance as svec. Serialization format is a 1D or 2D svec file with numeric dimensions (as produced through the serialize subcommand). If -e is specified, PROGRAM is interpreted as a function body and its return value is serialized into the same ASCII svec format as the input.
+	zparseopts -F -D e:=PROGRAM ${c#; Runs PROGRAM and serializes the result.}\
+                   s=SQUARE ${c#; Pads with 0s to make the matrix square.}\
 		   u:=USING ${c#PACKAGE,...; Accepts a comma-separated list of packages to import before running the program.}
-	local PROGRAM='using SparseArrays, Serialization'"${USING:+,$USING[2]}"'; (svec,_dims)=deserialize(ARGS[1]);'
-	if [[ ! $INTERACTIVE ]]; then PROGRAM=$PROGRAM"function julia() $1 end; serialize(stdout,(julia(),_dims));"; shift; fi
-	local SERIALIZED=$(cache "${1:-/dev/stdin}")
-	if [[ $INTERACTIVE ]]; then
-	    julia -i -e "$PROGRAM" "$SERIALIZED" </dev/tty
+        local PREFACE='using SparseArrays'"${USING:+,$USING[2]}"'; rcv=[]; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; for line in eachline(ARGS[1]); global rcv=split(line); push!(rows,parse(UInt32,rcv[1])); if (length(rcv)==3) push!(cols,parse(UInt32,rcv[2])); end; push!(vals,parse(Float64,rcv[end])); end; if (length(rcv)==3); svec=if '"${+SQUARE}"'==1 mx=max(maximum(rows),maximum(cols)); sparse(rows,cols,vals,mx,mx); else sparse(rows,cols,vals); end else svec=sparsevec(rows,vals); end;'
+	if [[ $PROGRAM ]]; then
+            julia -e "$PREFACE function julia(svec) ${PROGRAM[2]} end;"'out=julia(svec); if (out isa AbstractArray && issparse(out)) foreach((r,c,v=false) -> if v println("$r $c\t$v") else println("$r\t$c") end, findnz(out)...) else println(out) end;' <(cat "${1:-/dev/stdin}")
 	else
-	    julia -e "$PROGRAM" "$SERIALIZED"
+	    julia -i -e "$PREFACE" <(cat "${1:-/dev/stdin}") </dev/tty
 	fi
 	;;
     
@@ -196,8 +199,8 @@ case "$CMD" in
 	self map '$2*'"$1" "${2:--}"
 	;;
 
-    serialize) #MATRIX; Serializes 1D or 2D MATRIX to a Julia SparseArray. Output is a pair of a SparseArray and a map from numeric to symbolic dimensions to be used for deserializing.
-	julia -e 'using SparseArrays, Serialization; rcv=[]; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; _lookup=Dict{String,UInt32}(); _dims=Vector{String}(); for line in eachline(stdin); global rcv=split(line); push!(rows,get!(_lookup,rcv[1]) do; length(push!(_dims,rcv[1])); end); if (length(rcv)==3) push!(cols,get!(_lookup,rcv[2]) do; length(push!(_dims,rcv[2])); end); end; push!(vals,parse(Float64,rcv[end])); end; if (length(rcv)==3); svec=sparse(rows,cols,vals); else svec=sparsevec(rows,vals); end; serialize(stdout,(svec,_dims))' < "${1:-/dev/stdin}"
+    serialize) #SYMBOLTABLE MATRIX; Serializes MATRIX to a numeric embedding using SYMBOLTABLE, which is an list of dimensions whose order becomes the Cartesian dimension.
+        awk 'NR==FNR {symtab[$1]=NR} NR!=FNR {for (i=1;i<NF;i++) printf(symtab[$i]" "); print("\t"$NF)}' "${1:--}" "${2:--}"
 	;;
 
     sparse) #MATRIX; Removes 0 valued dimensions to create sparse vector or matrix

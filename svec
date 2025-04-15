@@ -144,9 +144,33 @@ case "$CMD" in
 	zparseopts -F -D e:=PROGRAM ${c#; Runs PROGRAM and serializes the result.}\
                    s=SQUARE ${c#; Pads with 0s to make the matrix square.}\
 		   u:=USING ${c#PACKAGE,...; Accepts a comma-separated list of packages to import before running the program.}
-        local PREFACE='using SparseArrays'"${USING:+,$USING[2]}"'; rcv=[]; rows=UInt32[]; cols=UInt32[]; vals=Float64[]; for line in eachline(ARGS[1]); global rcv=split(line); push!(rows,parse(UInt32,rcv[1])); if (length(rcv)==3) push!(cols,parse(UInt32,rcv[2])); end; push!(vals,parse(Float64,rcv[end])); end; if (length(rcv)==3); svec=if '"${+SQUARE}"'==1 mx=max(maximum(rows),maximum(cols)); sparse(rows,cols,vals,mx,mx); else sparse(rows,cols,vals); end else svec=sparsevec(rows,vals); end;'
+        read -r -d '\0' PREFACE <<-EOF
+        using SparseArrays${USING:+,$USING[2]}
+        svec = (() -> begin
+             rcv=nothing; rows=UInt32[]; cols=UInt32[]; vals=Float64[];
+             for line in eachline(ARGS[1])
+                 rcv=split(line); 
+                 push!(rows,parse(UInt32,rcv[1])); 
+                 if (length(rcv)==3) push!(cols,parse(UInt32,rcv[2])); end; 
+                 push!(vals,parse(Float64,rcv[end])); 
+             end
+             if (length(rcv)==3)
+                if ${#SQUARE}==1 
+                   println("square",${#SQUARE})
+                   mx=max(maximum(rows),maximum(cols)); 
+                   sparse(rows,cols,vals,mx,mx);
+                 else
+                   sparse(rows,cols,vals)
+                 end
+             else
+                sparsevec(rows,vals)
+             end
+        end)();
+        GC.gc();
+\0
+EOF
 	if [[ $PROGRAM ]]; then
-            julia -e "$PREFACE function julia(svec) ${PROGRAM[2]} end;"'out=julia(svec); if (out isa AbstractArray && issparse(out)) foreach((r,c,v=false) -> if v println("$r $c\t$v") else println("$r\t$c") end, findnz(out)...) else println(out) end;' <(cat "${1:-/dev/stdin}")
+            julia -e "$PREFACE"'function julia(svec) '"${PROGRAM[2]}"' end;function deserialize(o::AbstractMatrix) foreach((r,c,v) -> println("$r $c\t$v"), findnz(o)...) end; function deserialize(o::Any) display(o) end; deserialize(julia(svec)); ' <(cat "${1:-/dev/stdin}")
 	else
 	    julia -i -e "$PREFACE" <(cat "${1:-/dev/stdin}") </dev/tty
 	fi

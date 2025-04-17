@@ -104,13 +104,19 @@ case "$CMD" in
     arithmetic) #OPERATOR [MATRIX]; Given a non-standard matrix with tab-separated values, combine the values using the operator.
         cat "${2:--}" | arithmetic "$1"
         ;;
+
+    coords) #COORDMAP [MATRIX]; Remaps the coordinate system between symbolic and Cartesian. The COORDMAP is a line-separated list of symbolic dimensions, with order corresponding to Cartesian dimension. Default is symbolic -> Cartesian (for input to Julia).
+        zparseopts -F -D r=REVERSE ${c#; Reverse direction: converts Cartesian -> symbolic.}\
+		   c=COORDSONLY ${c#; Assume all columns are dimensions: input has no values and is not a matrix.}
+        awk -vREVERSE="${#REVERSE}" -vCOORDSONLY="${#COORDSONLY}" 'NR==FNR {REVERSE ? symtab[NR]=$1 : symtab[$1]=NR} NR!=FNR {for (i=1;i<NF+COORDSONLY;i++) printf("%s%s",1==i?"":" ",symtab[$i]); print(COORDSONLY?"":"\t"$NF)}' "${1:--}" "${2:--}"
+        ;;
     
     counts) #TOKENS; Prints a vector of counts from a newline-separated stream of tokens
 	sort "${1:--}" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
-
-    deserialize) #SYMBOLTABLE SERIALIZED; Deserializes Cartesian embedded MATRIX to a symbolic embedding using SYMBOLTABLE, which is an list of dimensions whose order becomes the Cartesian dimension.
-        awk 'NR==FNR {symtab[NR]=$1} NR!=FNR {for (i=1;i<NF;i++) printf(symtab[$i]" "); print("\t"$NF)}' "${1:--}" "${2:--}"
+    
+    counts) #TOKENS; Prints a vector of counts from a newline-separated stream of tokens
+	sort "${1:--}" | uniq -c | sed -E 's/[[:space:]]*([[:digit:]]+) (.+)/\2\t\1/'
 	;;
 
     dimensions) #MATRIX; Print only the dimensions (dropping the values).
@@ -149,28 +155,27 @@ case "$CMD" in
         svec = (() -> begin
              rcv=nothing; rows=UInt32[]; cols=UInt32[]; vals=Float64[];
              for line in eachline(ARGS[1])
-                 rcv=split(line); 
-                 push!(rows,parse(UInt32,rcv[1])); 
-                 if (length(rcv)==3) push!(cols,parse(UInt32,rcv[2])); end; 
-                 push!(vals,parse(Float64,rcv[end])); 
+                 rcv=split(line)
+                 push!(rows,parse(UInt32,rcv[1]))
+                 if (length(rcv)==3) push!(cols,parse(UInt32,rcv[2])) end
+                 push!(vals,parse(Float64,rcv[end])) 
              end
              if (length(rcv)==3)
                 if ${#SQUARE}==1 
-                   println("square",${#SQUARE})
-                   mx=max(maximum(rows),maximum(cols)); 
-                   sparse(rows,cols,vals,mx,mx);
+                   mx=max(maximum(rows),maximum(cols));
+                   sparse(rows,cols,vals,mx,mx)
                  else
                    sparse(rows,cols,vals)
                  end
              else
                 sparsevec(rows,vals)
              end
-        end)();
+        end)()
         GC.gc();
 \0
 EOF
 	if [[ $PROGRAM ]]; then
-            julia -e "$PREFACE"'function julia(svec) '"${PROGRAM[2]}"' end;function deserialize(o::AbstractMatrix) foreach((r,c,v) -> println("$r $c\t$v"), findnz(o)...) end; function deserialize(o::Any) display(o) end; deserialize(julia(svec)); ' <(cat "${1:-/dev/stdin}")
+            julia -e "$PREFACE"';function julia(svec) '"${PROGRAM[2]}"' end;function deserialize(o::AbstractMatrix) foreach((r,c,v) -> println("$r $c\t$v"), findnz(o)...) end; function deserialize(o::AbstractVector) foreach((r,v) -> println("$r\t$v"), findnz(o)...) end; function deserialize(o::Any) display(o) end; deserialize(julia(svec)); ' <(cat "${1:-/dev/stdin}")
 	else
 	    julia -i -e "$PREFACE" <(cat "${1:-/dev/stdin}") </dev/tty
 	fi
@@ -223,10 +228,6 @@ EOF
 	self map '$2*'"$1" "${2:--}"
 	;;
 
-    serialize) #SYMBOLTABLE MATRIX; Serializes MATRIX to a numeric embedding using SYMBOLTABLE, which is an list of dimensions whose order becomes the Cartesian dimension.
-        awk 'NR==FNR {symtab[$1]=NR} NR!=FNR {for (i=1;i<NF;i++) printf(symtab[$i]" "); print("\t"$NF)}' "${1:--}" "${2:--}"
-	;;
-
     sparse) #MATRIX; Removes 0 valued dimensions to create sparse vector or matrix
 	tsvecawk '$NF!=0' "$1"
 	;;
@@ -247,7 +248,7 @@ EOF
 	svecawk '{n+=$NF} END {print n}' "$1"
 	;;
 
-    symmetric) #LOWERTRIANGULAR; Converts a LOWERTRIANGULAR matrix into a symmetric matrix by reflecting the lower half across the diagonal.
+    symmetric) #UPPERTRIANGULAR; Converts a UPPERTRIANGULAR matrix into a symmetric matrix by reflecting the lower half across the diagonal.
 	zparseopts -F -D d=DIAGONAL ${c#; Do not de-duplicate entries for the diagonal. Useful for counting dimensions when rows and columns are in the same domain.}\
                    u=UNSORTED ${c#; Do not sort the results into normalized svec format when reflecting. Faster if you only need counts, not joins.}
 	svecawk -vDIAGONAL="$DIAGONAL" '{print} DIAGONAL || $1!=$2 {print $2,$1"\t"$3}' "$1" | if [[ $UNSORTED ]]; then cat; else sort; fi

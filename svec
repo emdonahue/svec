@@ -108,7 +108,7 @@ case "$CMD" in
     coords) #COORDMAP [MATRIX]; Remaps the coordinate system between symbolic and Cartesian. The COORDMAP is a line-separated list of symbolic dimensions, with order corresponding to Cartesian dimension. Default is symbolic -> Cartesian (for input to Julia).
         zparseopts -F -D r=REVERSE ${c#; Reverse direction: converts Cartesian -> symbolic.}\
 		   c=COORDSONLY ${c#; Assume all columns are dimensions: input has no values and is not a matrix.}
-        awk -vREVERSE="${#REVERSE}" -vCOORDSONLY="${#COORDSONLY}" 'NR==FNR {REVERSE ? symtab[NR]=$1 : symtab[$1]=NR} NR!=FNR {for (i=1;i<NF+COORDSONLY;i++) printf("%s%s",1==i?"":" ",symtab[$i]); print(COORDSONLY?"":"\t"$NF)}' "${1:--}" "${2:--}"
+        awk -vREVERSE="${#REVERSE}" -vCOORDSONLY="${#COORDSONLY}" ' NR==FNR {REVERSE ? symtab[NR]=$1 : symtab[$1]=NR} NR!=FNR {for (i=1;i<NF+COORDSONLY;i++) {if (!($i in symtab)) printf("%s not in coordinate system\n", $i) > "/dev/stderr"; else printf("%s%s",1==i?"":" ",symtab[$i]);}; print(COORDSONLY?"":"\t"$NF)}' "${1:--}" "${2:--}"
         ;;
     
     counts) #TOKENS; Prints a vector of counts from a newline-separated stream of tokens
